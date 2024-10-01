@@ -7,17 +7,19 @@ GO
 -- Create Data: <28 de septiembre del 2024>
 -- Description: <Autenticacion del Usuario>
 -- ############################
-ALTER PROCEDURE sp_iniciar_sesion
+ALTER PROCEDURE [dbo].[sp_iniciar_sesion]
     @correo VARCHAR(100),               
-    @contrasena VARCHAR(255),
-    @tipoError INT OUTPUT,
-    @mensaje VARCHAR(255) OUTPUT
+    @contrasena VARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
 
+		DECLARE @tipoError INT;
+		DECLARE @mensaje VARCHAR(255);
+
     BEGIN TRY
         -- Inicialización de variables de salida
+
         SET @tipoError = 0; 
         SET @mensaje = '';
 
@@ -26,7 +28,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Los campos correo y contraseña son obligatorios';
-			SELECT NULL AS Id, NULL AS Nombre, NULL AS RolId
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -43,7 +45,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1; 
             SET @mensaje = 'El correo no está registrado';
-			SELECT NULL AS Id, NULL AS Nombre, NULL AS RolId
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -52,15 +54,20 @@ BEGIN
         BEGIN
             SET @tipoError = 2; 
             SET @mensaje = 'Contraseña incorrecta';
-			SELECT NULL AS Id, NULL AS Nombre, NULL AS RolId
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
         -- Si la contraseña coincide, obtener los datos del usuario
+		SET @tipoError = 0; 
+        SET @mensaje = 'Operación correcta';
+
         SELECT
 			[id] = id,
             [nombre] = nombre,
-            [rolId] = rolId
+            [rolId] = rolId,
+			@tipoError AS tipoError,
+			@mensaje AS mensaje
         FROM BSK_Cliente
         WHERE id = @clienteId;
 
@@ -69,13 +76,13 @@ BEGIN
         -- Manejo de errores
         SET @tipoError = 3;  
         SET @mensaje = ERROR_MESSAGE();
-    END CATCH
 
-    -- Si hubo un error, devuelve el tipo de error y el mensaje
-    IF @tipoError <> 0
-    BEGIN
-        SELECT 
+		SELECT 
+			0 AS Id, 
+			NULL AS Nombre, 
+			0 AS RolId, 
             @tipoError AS tipoError, 
             @mensaje AS mensaje;
-    END
+
+    END CATCH
 END
