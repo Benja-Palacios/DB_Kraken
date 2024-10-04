@@ -15,7 +15,7 @@ CREATE TABLE BSK_Rol (
     nombre VARCHAR(50) NOT NULL UNIQUE
 );
 
--- Tabla de Customer (Información personal de los clientes/usuarios)
+-- Tabla de Customer (Informacion personal de los clientes/usuarios)
 CREATE TABLE BSK_Cliente (
     id INT IDENTITY(1,1) PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE BSK_Cliente (
     FOREIGN KEY (rolId) REFERENCES BSK_Rol(id)
 );
 
--- Tabla de Autenticación (solo autenticación)
+-- Tabla de Autenticacion (solo autenticacion)
 CREATE TABLE BSK_Autenticacion (
     id INT IDENTITY(1,1) PRIMARY KEY,       
     correo VARCHAR(100) NOT NULL UNIQUE,    
