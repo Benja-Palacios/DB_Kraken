@@ -110,7 +110,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Los campos correo y contrase�a son obligatorios';
-			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena ;
             RETURN;
         END
 
@@ -127,7 +127,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1; 
             SET @mensaje = 'El correo no est� registrado';
-			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
             RETURN;
         END
 
@@ -136,7 +136,7 @@ BEGIN
         BEGIN
             SET @tipoError = 2; 
             SET @mensaje = 'Contrase�a incorrecta';
-			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
+			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
             RETURN;
         END
 
@@ -149,7 +149,9 @@ BEGIN
             [nombre] = nombre,
             [rolId] = rolId,
 			@tipoError AS tipoError,
-			@mensaje AS mensaje
+			@mensaje AS mensaje, 
+            @correo AS correo, 
+            @contrasena AS contrasena
         FROM BSK_Cliente
         WHERE id = @clienteId;
 
@@ -164,7 +166,9 @@ BEGIN
 			NULL AS Nombre, 
 			0 AS RolId, 
             @tipoError AS tipoError, 
-            @mensaje AS mensaje;
+            @mensaje AS mensaje, 
+            @correo AS correo, 
+            @contrasena AS contrasena;
 
     END CATCH
 END
