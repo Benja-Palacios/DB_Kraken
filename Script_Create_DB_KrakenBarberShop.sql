@@ -4,8 +4,8 @@ USE KraenBarberShop;
 GO
 
 -- ############################
--- Autor: <Emil Jesus Hernandez Avila>
--- Create Data: <28 de septiembre del 2024>
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de septiembre del 2024>
 -- Description: <Crear Base de datos>
 -- ############################
 
@@ -22,6 +22,7 @@ CREATE TABLE BSK_Cliente (
     apellidoPaterno VARCHAR(50) NOT NULL,
     apellidoMaterno VARCHAR(50),
     rolId INT NOT NULL,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
     FOREIGN KEY (rolId) REFERENCES BSK_Rol(id)
 );
 
@@ -36,8 +37,41 @@ CREATE TABLE BSK_Autenticacion (
 
 CREATE UNIQUE INDEX IX_BSK_Autenticacion_Correo ON BSK_Autenticacion(correo);
 
+
 INSERT INTO BSK_Rol (nombre)
 VALUES 
 ('Administrador'),
 ('Empleado'),
 ('Cliente');
+
+-- ############################
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <6 de octubre del 2024>
+-- Description: <Crear tabla Tienda y DireccionTienda>
+-- ############################
+
+-- Tabla de Tienda (Información de las barberías)
+CREATE TABLE BSK_Tienda (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    imagen VARCHAR(255) NOT NULL, 
+    clienteId INT NOT NULL, 
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id) 
+);
+
+-- Tabla de DireccionTienda (Direcciones de las barberías)
+CREATE TABLE BSK_DireccionTienda (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    CP VARCHAR(5) NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    municipio VARCHAR(50) NOT NULL,
+    colonia VARCHAR(100) NOT NULL,
+    calle VARCHAR(100) NOT NULL,
+    noExterior VARCHAR(10) NOT NULL,
+    telefono VARCHAR(10) NOT NULL, 
+    referencia VARCHAR(255), 
+    tiendaId INT NOT NULL, 
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
+);

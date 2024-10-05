@@ -175,3 +175,10 @@ END
 GO
 print 'Operacion correcta, sp_iniciar_sesion ejecutado.'
 ------*************************************************************
+
+-- ############################
+-- STORE PROCEDURE DE CREAR TIENDAS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <6 de octubre 2024>
+-- Description: <Crear nueva tienda>
+-- ############################
