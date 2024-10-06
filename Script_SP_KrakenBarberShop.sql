@@ -399,10 +399,12 @@ GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_direccion]
     @CP VARCHAR(5),
-    @Estado VARCHAR(50),
-    @Municipio VARCHAR(50),
-    @Colonia VARCHAR(100),
-    @Calle VARCHAR(100),
+    @ubicacion VARCHAR(50),
+    @tipoVivienda VARCHAR(50),
+    @municipio VARCHAR(100),
+    @estado VARCHAR(100),
+    @ciudad VARCHAR(100),
+    @pais VARCHAR(100),
     @NoExterior VARCHAR(10),
     @Telefono VARCHAR(10),
     @Referencia VARCHAR(255) = NULL,  
@@ -421,10 +423,12 @@ BEGIN
 
         -- Validación de datos de entrada
         IF LTRIM(RTRIM(@CP)) = '' OR 
-           LTRIM(RTRIM(@Estado)) = '' OR 
-           LTRIM(RTRIM(@Municipio)) = '' OR 
-           LTRIM(RTRIM(@Colonia)) = '' OR 
-           LTRIM(RTRIM(@Calle)) = '' OR 
+           LTRIM(RTRIM(@ubicacion)) = '' OR 
+           LTRIM(RTRIM(@tipoVivienda)) = '' OR 
+           LTRIM(RTRIM(@municipio)) = '' OR 
+           LTRIM(RTRIM(@estado)) = '' OR 
+           LTRIM(RTRIM(@ciudad)) = '' OR 
+           LTRIM(RTRIM(@pais)) = '' OR 
            LTRIM(RTRIM(@NoExterior)) = '' OR 
            LTRIM(RTRIM(@Telefono)) = ''
         BEGIN
@@ -444,8 +448,10 @@ BEGIN
         END
 
         -- Insertar la dirección de la tienda
-        INSERT INTO BSK_DireccionTienda (CP, estado, municipio, colonia, calle, noExterior, telefono, referencia, tiendaId)
-        VALUES (@CP, @Estado, @Municipio, @Colonia, @Calle, @NoExterior, @Telefono, @Referencia, @TiendaId);
+        INSERT INTO BSK_DireccionTienda (CP, estado, municipio, asentamiento, tipo_asentamiento, ciudad, pais, noExterior, telefono, referencia, tiendaId)
+
+        VALUES (@CP, @Estado, @Municipio, @Ubicacion, @TipoVivienda, @Ciudad, @Pais, @NoExterior, @Telefono, @Referencia, @TiendaId);
+
 
         -- Si la inserción fue exitosa
         DECLARE @DireccionId INT = SCOPE_IDENTITY();
@@ -479,12 +485,14 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_direccion]
- @DireccionId INT,
+    @DireccionId INT,
     @CP VARCHAR(5),
-    @Estado VARCHAR(50),
-    @Municipio VARCHAR(50),
-    @Colonia VARCHAR(100),
-    @Calle VARCHAR(100),
+    @ubicacion VARCHAR(50),
+    @tipoVivienda VARCHAR(50),
+    @municipio VARCHAR(100),
+    @estado VARCHAR(100),
+    @ciudad VARCHAR(100),
+    @pais VARCHAR(100),
     @NoExterior VARCHAR(10),
     @Telefono VARCHAR(10),
     @Referencia VARCHAR(255)
@@ -503,10 +511,12 @@ BEGIN
         -- Validación de datos de entrada
         IF @DireccionId IS NULL OR @DireccionId <= 0 OR
            LTRIM(RTRIM(@CP)) = '' OR 
-           LTRIM(RTRIM(@Estado)) = '' OR 
-           LTRIM(RTRIM(@Municipio)) = '' OR 
-           LTRIM(RTRIM(@Colonia)) = '' OR 
-           LTRIM(RTRIM(@Calle)) = '' OR 
+           LTRIM(RTRIM(@ubicacion)) = '' OR 
+           LTRIM(RTRIM(@tipoVivienda)) = '' OR 
+           LTRIM(RTRIM(@municipio)) = '' OR 
+           LTRIM(RTRIM(@estado)) = '' OR 
+           LTRIM(RTRIM(@ciudad)) = '' OR 
+           LTRIM(RTRIM(@pais)) = '' OR 
            LTRIM(RTRIM(@NoExterior)) = '' OR 
            LTRIM(RTRIM(@Telefono)) = ''
         BEGIN
@@ -528,10 +538,12 @@ BEGIN
         -- Actualizar la dirección de la tienda
         UPDATE BSK_DireccionTienda
         SET CP = @CP,
-            estado = @Estado,
+            ubicacion = @Ubicacion,
+            tipoVivienda = @TipoVivienda,
             municipio = @Municipio,
-            colonia = @Colonia,
-            calle = @Calle,
+            estado = @Estado,
+            ciudad = @Ciudad,
+            pais = @Pais,  
             noExterior = @NoExterior,
             telefono = @Telefono,
             referencia = @Referencia
