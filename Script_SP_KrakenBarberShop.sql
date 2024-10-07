@@ -202,7 +202,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Los campos Nombre y Imagen son obligatorios';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen, @ClienteId AS clienteId;
+            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -211,7 +211,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1; 
             SET @mensaje = 'El Administrador no existe';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen, @ClienteId AS clienteId;
+            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -226,7 +226,7 @@ BEGIN
         SET @tipoError = 0;
         SET @mensaje = 'Tienda agregada exitosamente';
 
-        SELECT @TiendaId AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen, @ClienteId AS clienteId;
+        SELECT @TiendaId AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -237,10 +237,7 @@ BEGIN
         SELECT 
             0 AS TiendaId, 
             @tipoError AS tipoError, 
-            @mensaje AS mensaje, 
-            @Nombre AS Nombre, 
-            @Imagen AS Imagen, 
-            @ClienteId AS clienteId;
+            @mensaje AS mensaje
     END CATCH
 END
 GO
