@@ -45,26 +45,33 @@ EXEC [dbo].[sp_eliminar_tienda]
 
 EXEC [dbo].[sp_agregar_direccion] 
     @CP = '42900', 
-    @Estado = 'Estado de Prueba', 
-    @Municipio = 'Municipio de Prueba', 
-    @Colonia = 'Colonia de Prueba', 
-    @Calle = 'Calle de Prueba', 
+    @ubicacion = 'Ubicacion de Prueba',
+    @tipoVivienda = 'Vivienda de Prueba', 
+    @municipio = 'Municipio de Prueba', 
+    @estado = 'Estado de Prueba', 
+    @ciudad = 'Ciudad de Prueba',
+    @pais = 'Pais de Prueba', 
     @NoExterior = '123', 
     @Telefono = '555123456788', 
     @Referencia = 'entre cale 1 y 2', 
     @TiendaId = 8;
 
+
 -----------STORE PROCEDURE DE EDITAR DIRECCION DE LA TIENDA
 EXEC [dbo].[sp_editar_direccion]
     @DireccionId = 14,
-    @CP = '12345', 
-    @Estado = 'Nuevo Estado', 
-    @Municipio = 'Nuevo Municipio', 
-    @Colonia = 'Nueva Colonia', 
-    @Calle = 'Nueva Calle', 
+    @CP = '12345',
+    @ubicacion = 'Ubicacion nueva', 
+    @tipoVivienda = 'Vivienda nueva',
+    @municipio = 'Nuevo Municipio', 
+    @estado = 'Nuevo Estado', 
+    @ciudad = 'Ciudad nueva',
+    @pais = 'Pais nueva', 
     @NoExterior = '123', 
     @Telefono = '5551234567', 
     @Referencia = 'Al lado del supermercado';
+   
+
 
 -----------STORE PROCEDURE DE EDITAR DIRECCION DE LA TIENDA
 EXEC [dbo].[sp_eliminar_direccion] 
