@@ -77,3 +77,14 @@ CREATE TABLE BSK_DireccionTienda (
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
     FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
 );
+
+-- Tabla de Estilos (Estilos de las barberías)
+CREATE TABLE BSK_EstilosTienda (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,   
+    imagen VARCHAR(255) NOT NULL, 
+	descripcion VARCHAR(255), 
+    tiendaId INT NOT NULL, 
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
+);

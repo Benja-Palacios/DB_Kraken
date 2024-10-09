@@ -73,6 +73,26 @@ EXEC [dbo].[sp_editar_direccion]
    
 
 
------------STORE PROCEDURE DE EDITAR DIRECCION DE LA TIENDA
+-----------STORE PROCEDURE DE ELIMINAR DIRECCION DE LA TIENDA
 EXEC [dbo].[sp_eliminar_direccion] 
     @DireccionId = 14;
+
+
+-----------STORE PROCEDURE DE AGREGAR ESTILO DE CORTES DE LA TIENDA
+EXEC [dbo].[sp_agregar_estilo]  
+    @Nombre = 'Moicano', 
+    @Imagen = 'nueva_imagen.jpg',
+    @Descripcion = 'Es un corte unico que hacemos al estilo', 
+    @TiendaId = 2;
+
+-----------STORE PROCEDURE DE EDITAR ESTILO DE CORTES DE LA TIENDA
+EXEC [dbo].[sp_editar_estilo]  
+    @Nombre = 'Corte nuevo', 
+    @Imagen = 'nueva_imagen2.jpg',
+    @Descripcion = 'nueva descripcion', 
+    @EstiloId = 2;
+
+-----------STORE PROCEDURE DE ELIMINAR ESTILO DE CORTES DE LA TIENDA
+
+EXEC [dbo].[sp_eliminar_estilo] 
+     @EstiloId = 2;

@@ -78,6 +78,7 @@ BEGIN
 END
 GO
 print 'Operacion correcta, Sp_registrar_cliente ejecutado.'
+GO
 -----******************************************************************
 
 -- ############################
@@ -171,6 +172,7 @@ BEGIN
 END
 GO
 print 'Operacion correcta, sp_iniciar_sesion ejecutado.'
+GO
 ------*************************************************************
 
 -- ############################
@@ -445,7 +447,7 @@ BEGIN
         END
 
         -- Insertar la dirección de la tienda
-        INSERT INTO BSK_DireccionTienda (CP, estado, municipio, asentamiento, tipo_asentamiento, ciudad, pais, noExterior, telefono, referencia, tiendaId)
+        INSERT INTO BSK_DireccionTienda (CP, estado, municipio, ubicacion, tipoVivienda, ciudad, pais, noExterior, telefono, referencia, tiendaId)
 
         VALUES (@CP, @Estado, @Municipio, @Ubicacion, @TipoVivienda, @Ciudad, @Pais, @NoExterior, @Telefono, @Referencia, @TiendaId);
 
@@ -614,6 +616,219 @@ BEGIN
         -- Si la eliminación fue exitosa
         SET @tipoError = 0; 
         SET @mensaje = 'Dirección de tienda eliminada correctamente';
+
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+    END TRY
+    BEGIN CATCH
+        -- Manejo de errores
+        SET @tipoError = 3;  
+        SET @mensaje = ERROR_MESSAGE();
+
+        SELECT 
+            @tipoError AS tipoError, 
+            @mensaje AS mensaje;
+    END CATCH
+END;
+GO
+print 'Operación correcta, sp_eliminar_direccion ejecutado.';
+GO
+------*************************************************************
+
+-- ############################
+-- STORE PROCEDURE DE AGREGAR ESTILO DE CORTE DE LAS TIENDAS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Agrega el estilo de corte de las tiendas>
+-- ############################
+
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_estilo]
+    @Nombre VARCHAR(100),
+    @Imagen VARCHAR(255),
+    @Descripcion VARCHAR(255),
+    @TiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @tipoError INT;
+    DECLARE @mensaje VARCHAR(255);
+
+    BEGIN TRY
+        -- Inicialización de variables de salida
+        SET @tipoError = 0; 
+        SET @mensaje = '';
+
+        -- Validación de datos de entrada
+        IF @Nombre IS NULL OR @Nombre = '' OR @Imagen IS NULL OR @Imagen = '' OR @TiendaId IS NULL
+        BEGIN
+            SET @tipoError = 4; 
+            SET @mensaje = 'Los campos Nombre y Imagen son obligatorios';
+            SELECT 0 AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Validar que la tienda existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @TiendaId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'La tienda a la que desea agregar el estilo del corte no existe';
+            SELECT 0 AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Inserción del estilo
+        INSERT INTO BSK_EstilosTienda (nombre, imagen, descripcion, tiendaId)
+        VALUES (@Nombre, @Imagen, @Descripcion, @TiendaId);  -- Corregida la coma faltante
+
+        -- Retornar el ID del estilo recién agregado
+        DECLARE @EstiloId INT;
+        SET @EstiloId = SCOPE_IDENTITY();  -- Cambié la variable correcta para capturar el ID del estilo
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Estilo agregado exitosamente';
+
+        SELECT @EstiloId AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+
+    END TRY
+    BEGIN CATCH
+        -- Manejo de errores
+        SET @tipoError = 3;  
+        SET @mensaje = ERROR_MESSAGE();
+
+        SELECT 
+            0 AS EstiloId, 
+            @tipoError AS tipoError, 
+            @mensaje AS mensaje;
+    END CATCH
+END
+GO
+print 'Operacion correcta, sp_agregar_estilo ejecutado.'
+GO
+
+------*************************************************************
+
+
+-- ############################
+-- STORE PROCEDURE DE EDITAR ESTILO DE CORTE DE LAS TIENDAS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Edita el estilo de corte de las tiendas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_estilo]
+    @EstiloId INT,
+	@Nombre VARCHAR(100),
+    @Imagen VARCHAR(255),
+    @Descripcion VARCHAR(255)
+    
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @tipoError INT;
+    DECLARE @mensaje VARCHAR(255);
+
+    BEGIN TRY
+        -- Inicialización de variables de salida
+        SET @tipoError = 0; 
+        SET @mensaje = '';
+
+        -- Validación de datos de entrada
+        IF @Nombre IS NULL OR @Nombre = '' OR @Imagen IS NULL OR @Imagen = '' OR @EstiloId IS NULL
+        BEGIN
+            SET @tipoError = 4; 
+            SET @mensaje = 'Los campos Nombre y Imagen son obligatorios';
+            SELECT 0 AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Verificar si el estilo existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_EstilosTienda WHERE id = @EstiloId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'El estilo que desea editar no existe';
+            SELECT 0 AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Actualizar la dirección de la tienda
+        UPDATE BSK_EstilosTienda
+        SET 
+            nombre = @Nombre,
+            imagen = @Imagen,
+            descripcion = @Descripcion
+        WHERE id = @EstiloId;
+
+        -- Si la actualización fue exitosa
+        SET @tipoError = 0; 
+        SET @mensaje = 'Estilo de la tienda actualizado correctamente';
+
+        SELECT @EstiloId AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+
+    END TRY
+    BEGIN CATCH
+        -- Manejo de errores
+        SET @tipoError = 3;  
+        SET @mensaje = ERROR_MESSAGE();
+
+        SELECT 
+            0 AS EstiloId, 
+            @tipoError AS tipoError, 
+            @mensaje AS mensaje;
+    END CATCH
+END;
+GO
+print 'Operación correcta, sp_editar_estilo ejecutado.';
+GO
+------*************************************************************
+
+-- ############################
+-- STORE PROCEDURE DE ELIMINAR ESTILO DE CORTE DE LAS TIENDAS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Elimina el estilo de corte de las tiendas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_estilo]
+    @EstiloId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @tipoError INT;
+    DECLARE @mensaje VARCHAR(255);
+
+    BEGIN TRY
+        -- Inicialización de variables de salida
+        SET @tipoError = 0; 
+        SET @mensaje = '';
+
+        -- Validación de datos de entrada
+        IF @EstiloId IS NULL OR @EstiloId <= 0
+        BEGIN
+            SET @tipoError = 4; 
+            SET @mensaje = 'El estilo que desea eliminar es obligatoria';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Verificar si el estilo existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_EstilosTienda WHERE id = @EstiloId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'El estilo que desea eliminar no existe';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Eliminar el estilo de la tienda
+        DELETE FROM BSK_EstilosTienda WHERE id = @EstiloId;
+
+        -- Si la eliminación fue exitosa
+        SET @tipoError = 0; 
+        SET @mensaje = 'Estilo de tienda eliminado correctamente';
 
         SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
