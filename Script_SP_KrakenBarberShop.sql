@@ -1,3 +1,4 @@
+-- #region sp_registrar_cliente
 -- ############################
 -- STORE PROCEDURE DE REGISTRO DE USUARIOS
 -- Autor: <Emil Jesus Hernandez Avila>
@@ -79,8 +80,9 @@ END
 GO
 print 'Operacion correcta, Sp_registrar_cliente ejecutado.'
 GO
------******************************************************************
-
+-- #endregion
+-----**************************************************************
+-- #region sp_iniciar_sesion
 -- ############################
 -- STORE PROCEDURE DE INICIO DE SESION
 -- Autor: <Emil Jesus Hernandez Avila>
@@ -173,8 +175,9 @@ END
 GO
 print 'Operacion correcta, sp_iniciar_sesion ejecutado.'
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_agregar_tienda
 -- ############################
 -- STORE PROCEDURE DE AGREGAR TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -245,8 +248,9 @@ END
 GO
 print 'Operacion correcta, sp_agregar_tienda ejecutado.'
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_editar_tienda
 -- ############################
 -- STORE PROCEDURE DE EDITAR TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -257,14 +261,13 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_tienda]
     @TiendaId INT,
     @Nombre VARCHAR(100),
-    @Imagen VARCHAR(255)
-   
+    @Imagen VARCHAR(255),
+    @ClienteId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -272,11 +275,11 @@ BEGIN
         SET @mensaje = '';
 
         -- Validación de datos de entrada
-        IF @TiendaId IS NULL OR @TiendaId <= 0 OR @Nombre IS NULL OR @Nombre = '' OR @Imagen IS NULL OR @Imagen = '' 
+        IF @TiendaId IS NULL OR @TiendaId <= 0 OR @Nombre IS NULL OR @Nombre = '' OR @Imagen IS NULL OR @Imagen = ''
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Los campos Nombre y Imagen son obligatorios';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -285,42 +288,64 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'La tienda que desea editar no existe';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
+        -- Validar que el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @ClienteId)
+        BEGIN
+            SET @tipoError = 2;
+            SET @mensaje = 'El cliente no existe';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Iniciar una transacción
+        BEGIN TRANSACTION;
 
         -- Actualización de los datos de la tienda
         UPDATE BSK_Tienda
         SET nombre = @Nombre,
-            imagen = @Imagen
+            imagen = @Imagen,
+            clienteId = @ClienteId
         WHERE id = @TiendaId;
+
+        -- Verificar si se realizaron cambios
+        IF @@ROWCOUNT = 0
+        BEGIN
+            SET @tipoError = 2;
+            SET @mensaje = 'No se realizaron cambios en la tienda';
+            ROLLBACK TRANSACTION;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Confirmar la transacción
+        COMMIT TRANSACTION;
 
         -- Si la actualización fue exitosa
         SET @tipoError = 0;
         SET @mensaje = 'Tienda actualizada correctamente';
-
-        SELECT @TiendaId AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje, @Nombre AS Nombre, @Imagen AS Imagen;
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
         -- Manejo de errores
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
         SET @tipoError = 3;
         SET @mensaje = ERROR_MESSAGE();
-
-        SELECT 
-            0 AS TiendaId, 
-            @tipoError AS tipoError, 
-            @mensaje AS mensaje, 
-            @Nombre AS Nombre, 
-            @Imagen AS Imagen
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
     END CATCH
 END;
 GO
 print 'Operacion correcta, sp_editar_tienda ejecutado.'
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_eliminar_tienda
 -- ############################
 -- STORE PROCEDURE DE ELIMINAR TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -329,13 +354,12 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_tienda]
-    @TiendaId INT
+    @TiendaId INT,
+	@tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -347,7 +371,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'El tienda a eliminar es obligatoria';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -356,7 +380,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'La tienda que desea eliminar no existe';
-            SELECT 0 AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -370,7 +394,7 @@ BEGIN
         SET @tipoError = 0;
         SET @mensaje = 'Tienda eliminada correctamente';
 
-        SELECT @TiendaId AS TiendaId, @tipoError AS tipoError, @mensaje AS mensaje;
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -387,8 +411,9 @@ END;
 GO
 print 'Operacion correcta, sp_eliminar_tienda ejecutado.'
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_agregar_direccion
 -- ############################
 -- STORE PROCEDURE DE AGREGAR DIRECCION A LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -407,13 +432,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_direccion]
     @NoExterior VARCHAR(10),
     @Telefono VARCHAR(10),
     @Referencia VARCHAR(255) = NULL,  
-    @TiendaId INT
+    @TiendaId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -433,7 +457,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Todos los campos son obligatorios.';
-            SELECT 0 AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -442,7 +466,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'La tienda a la que desea agregar la dirección no existe';
-            SELECT 0 AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -457,7 +481,7 @@ BEGIN
         SET @tipoError = 0;
         SET @mensaje = 'Dirección de tienda agregada correctamente';
 
-        SELECT @DireccionId AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -466,16 +490,15 @@ BEGIN
         SET @mensaje = ERROR_MESSAGE();
 
         SELECT 
-            0 AS DireccionId, 
-            @tipoError AS tipoError, 
-            @mensaje AS mensaje;
+            @tipoError AS tipoError, @mensaje AS mensaje;
     END CATCH
 END;
 GO
 print 'Operación correcta, sp_agregar_direccion ejecutado.';
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_editar_direccion
 -- ############################
 -- STORE PROCEDURE DE EDITAR DIRECCION DE LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -484,7 +507,7 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_direccion]
-    @DireccionId INT,
+     @DireccionId INT,
     @CP VARCHAR(5),
     @ubicacion VARCHAR(50),
     @tipoVivienda VARCHAR(50),
@@ -494,13 +517,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_direccion]
     @pais VARCHAR(100),
     @NoExterior VARCHAR(10),
     @Telefono VARCHAR(10),
-    @Referencia VARCHAR(255)
+    @Referencia VARCHAR(255),
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -521,7 +543,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4; 
             SET @mensaje = 'Todos los campos son obligatorios.';
-            SELECT 0 AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -530,7 +552,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'La dirección que desea editar no existe';
-            SELECT 0 AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -552,7 +574,7 @@ BEGIN
         SET @tipoError = 0; 
         SET @mensaje = 'Dirección de tienda actualizada correctamente';
 
-        SELECT @DireccionId AS DireccionId, @tipoError AS tipoError, @mensaje AS mensaje;
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -561,16 +583,15 @@ BEGIN
         SET @mensaje = ERROR_MESSAGE();
 
         SELECT 
-            0 AS DireccionId, 
-            @tipoError AS tipoError, 
-            @mensaje AS mensaje;
+            @tipoError AS tipoError, @mensaje AS mensaje;
     END CATCH
 END;
 GO
 print 'Operación correcta, sp_editar_direccion ejecutado.';
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_eliminar_direccion
 -- ############################
 -- STORE PROCEDURE DE ELIMINAR DIRECCION DE LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -579,13 +600,12 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_direccion]
-    @DireccionId INT
+    @DireccionId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -633,8 +653,9 @@ END;
 GO
 print 'Operación correcta, sp_eliminar_direccion ejecutado.';
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_agregar_estilo
 -- ############################
 -- STORE PROCEDURE DE AGREGAR ESTILO DE CORTE DE LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -706,10 +727,9 @@ END
 GO
 print 'Operacion correcta, sp_agregar_estilo ejecutado.'
 GO
-
+-- #endregion
 ------*************************************************************
-
-
+-- #region sp_editar_estilo
 -- ############################
 -- STORE PROCEDURE DE EDITAR ESTILO DE CORTE DE LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -782,8 +802,9 @@ END;
 GO
 print 'Operación correcta, sp_editar_estilo ejecutado.';
 GO
+-- #endregion
 ------*************************************************************
-
+-- #region sp_eliminar_estilo
 -- ############################
 -- STORE PROCEDURE DE ELIMINAR ESTILO DE CORTE DE LAS TIENDAS
 -- Autor: <Emil Jesus Hernandez Avilez>
@@ -846,4 +867,67 @@ END;
 GO
 print 'Operación correcta, sp_eliminar_direccion ejecutado.';
 GO
+-- #endregion
+------*************************************************************
+-- #region sp_obtener_direcciones_por_tienda
+-- ############################
+-- STORE PROCEDURE DE OBTENER DIRECCIONES DE LAS TIENDA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtner las direcciones de las tienda>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_direcciones_por_tienda]
+    @TiendaID INT
+AS
+BEGIN
+    SELECT 
+        D.id AS DireccionID,
+        D.CP AS CP,
+        D.ubicacion AS Ubicacion,
+        D.tipoVivienda AS TipoVivienda,
+        D.municipio AS Municipio,
+        D.estado AS Estado,
+        D.ciudad AS Ciudad,
+        D.pais AS Pais,
+        D.noExterior AS NoExterior,
+        D.telefono AS Telefono,
+        D.referencia AS Referencia
+    FROM 
+        BSK_DireccionTienda D
+    WHERE 
+        D.tiendaId = @TiendaID;
+END;
+GO
+print 'Operación correcta, sp_obtener_direcciones_por_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+-- #region sp_obtener_tiendas_por_cliente
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDAS POR ID CLIENTE
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtner las tiendas por id cliente>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_tiendas_por_cliente]
+    @ClienteID INT
+AS
+BEGIN
+    SELECT 
+        T.id AS TiendaID,                
+        T.nombre AS NombreTienda,         
+        T.imagen AS ImagenTienda               
+    FROM 
+        BSK_Tienda T
+    INNER JOIN 
+        BSK_Cliente C ON T.clienteId = C.id
+    WHERE 
+        C.id = @ClienteID;
+END;
+GO
+print 'Operación correcta, sp_obtener_tiendas_por_cliente ejecutado.';
+GO
+-- #endregion
 ------*************************************************************

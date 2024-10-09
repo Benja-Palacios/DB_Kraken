@@ -96,3 +96,13 @@ EXEC [dbo].[sp_editar_estilo]
 
 EXEC [dbo].[sp_eliminar_estilo] 
      @EstiloId = 2;
+
+-----------STORE PROCEDURE DE OBTENER DIRECCIONES DE LAS TIENDA
+
+EXEC [dbo].[sp_obtener_direcciones_por_tienda] 
+    @TiendaID = 1 
+
+-----------STORE PROCEDURE DE OBTENER TIENDAS POR ID CLIENTE
+
+EXEC [dbo].[sp_obtener_tiendas_por_cliente] 
+    @ClienteID = 1 
