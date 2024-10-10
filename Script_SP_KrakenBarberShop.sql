@@ -865,7 +865,7 @@ BEGIN
     END CATCH
 END;
 GO
-print 'Operación correcta, sp_eliminar_direccion ejecutado.';
+print 'Operación correcta, sp_eliminar_estilo ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
