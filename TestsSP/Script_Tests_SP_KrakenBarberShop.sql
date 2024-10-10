@@ -106,3 +106,8 @@ EXEC [dbo].[sp_obtener_direcciones_por_tienda]
 
 EXEC [dbo].[sp_obtener_tiendas_por_cliente] 
     @ClienteID = 1 
+
+-----------STORE PROCEDURE DE OBTENER ESTILOS DE LAS TIENDA
+
+EXEC [dbo].[sp_obtener_estilos_por_tienda] 
+    @TiendaID = 3
