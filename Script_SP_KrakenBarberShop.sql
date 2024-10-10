@@ -954,7 +954,10 @@ print 'Operación correcta, sp_obtener_estilos_por_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6a1d85effeb77abbb3721efc8860e41abcc740a0
 -- #region sp_obtener_tienda_por_id
 -- ############################
 -- STORE PROCEDURE DE OBTENER TIENDA POR ID
