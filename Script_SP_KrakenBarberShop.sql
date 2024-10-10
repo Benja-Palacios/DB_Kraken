@@ -185,7 +185,7 @@ GO
 -- Description: <agregar nueva tienda>
 -- ############################
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_tienda]
+CREATE OR ALTER PROCEDURE [dbo].[spAgregarTienda]
 
     @Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
@@ -954,10 +954,7 @@ print 'Operación correcta, sp_obtener_estilos_por_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
-<<<<<<< HEAD
 
-=======
->>>>>>> 6a1d85effeb77abbb3721efc8860e41abcc740a0
 -- #region sp_obtener_tienda_por_id
 -- ############################
 -- STORE PROCEDURE DE OBTENER TIENDA POR ID
