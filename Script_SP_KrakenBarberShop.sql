@@ -702,14 +702,11 @@ BEGIN
         INSERT INTO BSK_EstilosTienda (nombre, imagen, descripcion, tiendaId)
         VALUES (@Nombre, @Imagen, @Descripcion, @TiendaId);  -- Corregida la coma faltante
 
-        -- Retornar el ID del estilo recién agregado
-        DECLARE @EstiloId INT;
-        SET @EstiloId = SCOPE_IDENTITY();  -- Cambié la variable correcta para capturar el ID del estilo
 
         SET @tipoError = 0;
         SET @mensaje = 'Estilo agregado exitosamente';
 
-        SELECT @EstiloId AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+        SELECT  @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -740,7 +737,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_estilo]
     @EstiloId INT,
 	@Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
-    @Descripcion VARCHAR(255)
+    @Descripcion VARCHAR(255),
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
     
@@ -783,7 +780,7 @@ BEGIN
         SET @tipoError = 0; 
         SET @mensaje = 'Estilo de la tienda actualizado correctamente';
 
-        SELECT @EstiloId AS EstiloId, @tipoError AS tipoError, @mensaje AS mensaje;
+        SELECT  @tipoError AS tipoError, @mensaje AS mensaje;
 
     END TRY
     BEGIN CATCH
@@ -811,7 +808,7 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_estilo]
-    @EstiloId INT
+    @EstiloId INT,
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -954,6 +951,34 @@ BEGIN
 END;
 GO
 print 'Operación correcta, sp_obtener_estilos_por_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_obtener_tienda_por_id
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDA POR ID
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtner tienda por id>
+-- ############################
+
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_tienda_por_id]
+    @TiendaID INT
+AS
+BEGIN
+    SELECT 
+        T.id AS TiendaID,
+        T.nombre AS NombreTienda,
+        T.imagen AS ImagenTienda
+    FROM 
+        BSK_Tienda T
+    WHERE 
+        T.id = @TiendaID;
+END;
+GO
+PRINT 'Operación correcta, sp_obtener_tienda_por_id ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
