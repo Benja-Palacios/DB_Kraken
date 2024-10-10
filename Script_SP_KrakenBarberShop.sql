@@ -957,3 +957,30 @@ print 'Operación correcta, sp_obtener_estilos_por_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+-- #region sp_obtener_tienda_por_id
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDA POR ID
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtner tienda por id>
+-- ############################
+
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_tienda_por_id]
+    @TiendaID INT
+AS
+BEGIN
+    SELECT 
+        T.id AS TiendaID,
+        T.nombre AS NombreTienda,
+        T.imagen AS ImagenTienda
+    FROM 
+        BSK_Tienda T
+    WHERE 
+        T.id = @TiendaID;
+END;
+GO
+PRINT 'Operación correcta, sp_obtener_tienda_por_id ejecutado.';
+GO
+-- #endregion
+------*************************************************************
