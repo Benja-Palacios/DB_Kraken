@@ -668,13 +668,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_estilo]
     @Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
     @Descripcion VARCHAR(255),
-    @TiendaId INT
+    @TiendaId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -742,13 +741,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_estilo]
 	@Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
     @Descripcion VARCHAR(255)
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
     
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -814,12 +812,11 @@ GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_estilo]
     @EstiloId INT
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @tipoError INT;
-    DECLARE @mensaje VARCHAR(255);
 
     BEGIN TRY
         -- Inicialización de variables de salida
@@ -879,6 +876,7 @@ GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_direcciones_por_tienda]
     @TiendaID INT
+    
 AS
 BEGIN
     SELECT 
