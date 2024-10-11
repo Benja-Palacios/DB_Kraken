@@ -13,7 +13,6 @@ EXEC [dbo].[sp_registrar_cliente]
     @tipoError = @tipoError OUTPUT, 
     @mensaje = @mensaje OUTPUT;
 
--- Mostrar los resultados de salida
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
 -----------STORE PROCEDURE DE INICIO DE SESION
@@ -24,24 +23,39 @@ EXEC [dbo].[sp_iniciar_sesion]
 
 -----------STORE PROCEDURE DE AGREGAR TIENDAS
 
-EXEC [dbo].[sp_agregar_tienda]
+EXEC [dbo].[spAgregarTienda]
     @Nombre = 'NombreTienda',
     @Imagen = 'ruta/imagen.jpg',
     @ClienteId = 2;
 
 -----------STORE PROCEDURE DE EDITAR TIENDAS
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
 
-EXEC [dbo].[sp_editar_tienda]
-    @TiendaId = 8, 
-    @Nombre = 'Nueva Tienda', 
-    @Imagen = 'nueva_imagen.jpg';
+EXEC dbo.sp_editar_tienda 
+    @TiendaId = 1, 
+    @Nombre = 'Nombre de Tienda', 
+    @Imagen = 'url_imagen', 
+    @ClienteId = 1, 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 -----------STORE PROCEDURE DE ELIMINAR TIENDAS
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
 
 EXEC [dbo].[sp_eliminar_tienda]
-    @TiendaId = 8;
+    @TiendaId = 8,
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
 -----------STORE PROCEDURE DE AGREGAR DIRECCION DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
 
 EXEC [dbo].[sp_agregar_direccion] 
     @CP = '42900', 
@@ -54,12 +68,19 @@ EXEC [dbo].[sp_agregar_direccion]
     @NoExterior = '123', 
     @Telefono = '555123456788', 
     @Referencia = 'entre cale 1 y 2', 
-    @TiendaId = 8;
+    @TiendaId = 1,
+	@tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 
 -----------STORE PROCEDURE DE EDITAR DIRECCION DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
 EXEC [dbo].[sp_editar_direccion]
-    @DireccionId = 14,
+    @DireccionId = 1,
     @CP = '12345',
     @ubicacion = 'Ubicacion nueva', 
     @tipoVivienda = 'Vivienda nueva',
@@ -69,33 +90,64 @@ EXEC [dbo].[sp_editar_direccion]
     @pais = 'Pais nueva', 
     @NoExterior = '123', 
     @Telefono = '5551234567', 
-    @Referencia = 'Al lado del supermercado';
+    @Referencia = 'Al lado del supermercado',
+	@tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
    
 
 
 -----------STORE PROCEDURE DE ELIMINAR DIRECCION DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
 EXEC [dbo].[sp_eliminar_direccion] 
-    @DireccionId = 14;
+    @DireccionId = 1,
+	@tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 
 -----------STORE PROCEDURE DE AGREGAR ESTILO DE CORTES DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
 EXEC [dbo].[sp_agregar_estilo]  
     @Nombre = 'Moicano', 
     @Imagen = 'nueva_imagen.jpg',
     @Descripcion = 'Es un corte unico que hacemos al estilo', 
-    @TiendaId = 2;
+    @TiendaId = 1,
+	@tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 -----------STORE PROCEDURE DE EDITAR ESTILO DE CORTES DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
 EXEC [dbo].[sp_editar_estilo]  
     @Nombre = 'Corte nuevo', 
     @Imagen = 'nueva_imagen2.jpg',
     @Descripcion = 'nueva descripcion', 
-    @EstiloId = 2;
+    @EstiloId = 1,
+	@tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 -----------STORE PROCEDURE DE ELIMINAR ESTILO DE CORTES DE LA TIENDA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
 
 EXEC [dbo].[sp_eliminar_estilo] 
-     @EstiloId = 2;
+    @EstiloId = 2,
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
 -----------STORE PROCEDURE DE OBTENER DIRECCIONES DE LAS TIENDA
 
@@ -110,4 +162,9 @@ EXEC [dbo].[sp_obtener_tiendas_por_cliente]
 -----------STORE PROCEDURE DE OBTENER ESTILOS DE LAS TIENDA
 
 EXEC [dbo].[sp_obtener_estilos_por_tienda] 
+    @TiendaID = 3
+
+-----------STORE PROCEDURE DE OBTENER TIENDA POR ID
+
+EXEC [dbo].[sp_obtener_tienda_por_id] 
     @TiendaID = 3

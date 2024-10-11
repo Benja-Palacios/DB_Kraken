@@ -507,7 +507,7 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_direccion]
-     @DireccionId INT,
+    @DireccionId INT,
     @CP VARCHAR(5),
     @ubicacion VARCHAR(50),
     @tipoVivienda VARCHAR(50),
