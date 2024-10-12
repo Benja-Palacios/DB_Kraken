@@ -982,3 +982,146 @@ PRINT 'Operación correcta, sp_obtener_tienda_por_id ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+
+-- #region sp_editar_cliente
+-- ############################
+-- STORE PROCEDURE PARA EDITAR DATOS DEL USUARIO
+-- Autor: <Emil Jesus Hernandez Avila>
+-- Create Date: <14 de octubre 2024 >
+-- Description: <Permitir a los usuarios editar su información personal>
+-- ############################
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cliente]
+    @clienteId INT,
+    @nombre VARCHAR(50),
+    @apellidoPaterno VARCHAR(50),
+    @apellidoMaterno VARCHAR(50),
+    @correo VARCHAR(100),
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+
+        -- Validación de nulos o vacíos
+        IF @nombre IS NULL OR LTRIM(RTRIM(@nombre)) = '' OR 
+           @apellidoPaterno IS NULL OR LTRIM(RTRIM(@apellidoPaterno)) = '' OR 
+           @apellidoMaterno IS NULL OR LTRIM(RTRIM(@apellidoMaterno)) = '' OR 
+           @correo IS NULL OR LTRIM(RTRIM(@correo)) = ''
+        BEGIN
+            SET @tipoError = 4;
+            SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            RETURN;
+        END
+
+        -- Validar si el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'Cliente no encontrado';
+            RETURN;
+        END
+
+        -- Verificar si el correo ya está en uso por otro cliente
+        IF EXISTS (SELECT 1 FROM BSK_Autenticacion WHERE correo = @correo AND clienteId != @clienteId)
+        BEGIN
+            SET @tipoError = 2;
+            SET @mensaje = 'El correo ya está en uso por otro cliente';
+            RETURN;
+        END
+
+        -- Actualizar datos en la tabla Cliente
+        UPDATE BSK_Cliente
+        SET nombre = @nombre,
+            apellidoPaterno = @apellidoPaterno,
+            apellidoMaterno = @apellidoMaterno
+        WHERE id = @clienteId;
+
+        -- Actualizar el correo en la tabla Autenticacion
+        UPDATE BSK_Autenticacion
+        SET correo = @correo
+        WHERE clienteId = @clienteId;
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Datos actualizados correctamente';
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 3;
+        SET @mensaje = ERROR_MESSAGE();
+    END CATCH
+END
+GO
+print 'Operación correcta, sp_editar_cliente ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+
+-- #region sp_cambiar_contrasena
+-- ############################
+-- STORE PROCEDURE PARA CAMBIAR CONTRASEÑA
+-- Autor: <Emil Jesus Hernandez Avila>
+-- Create Date: <Fecha Actual>
+-- Description: <Permitir a los usuarios cambiar su contraseña>
+-- ############################
+CREATE OR ALTER PROCEDURE [dbo].[sp_cambiar_contrasena]
+    @correo VARCHAR(100),
+    @contrasenaActual VARCHAR(255),
+    @nuevaContrasena VARCHAR(255),
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        -- Validar si el correo existe y obtener la contraseña actual
+        DECLARE @contrasena_bd VARCHAR(64);
+        DECLARE @clienteId INT;
+
+        SELECT @contrasena_bd = contrasena, @clienteId = clienteId
+        FROM BSK_Autenticacion
+        WHERE correo = @correo;
+
+        IF @contrasena_bd IS NULL
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'El correo no está registrado';
+            RETURN;
+        END
+		    
+        -- Validar la contraseña actual (convertir el hash a VARCHAR para comparar)
+        IF @contrasena_bd != CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', @contrasenaActual))
+        BEGIN
+            SET @tipoError = 2;
+            SET @mensaje = 'Contraseña actual incorrecta';
+            RETURN;
+        END
+
+
+
+        -- Actualizar la contraseña (almacenar como VARCHAR)
+        UPDATE BSK_Autenticacion
+        SET contrasena = HASHBYTES('SHA2_256', @nuevaContrasena)
+        WHERE clienteId = @clienteId;
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Contraseña actualizada correctamente';
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 3;
+        SET @mensaje = ERROR_MESSAGE();
+    END CATCH
+END
+GO
+print 'Operación correcta, sp_cambiar_contrasena ejecutado.';
+GO
+-- #endregion
+------*************************************************************

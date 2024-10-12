@@ -168,3 +168,34 @@ EXEC [dbo].[sp_obtener_estilos_por_tienda]
 
 EXEC [dbo].[sp_obtener_tienda_por_id] 
     @TiendaID = 3
+
+-----------STORE PROCEDURE DE EDITAR DATOS DEL CLIENTE
+
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+
+EXEC [dbo].[sp_editar_cliente]
+    @clienteId = 1,                                
+    @nombre = 'Emil',                             
+    @apellidoPaterno = 'Hernandez',                
+    @apellidoMaterno = 'Avila',                    
+	@correo = 'emil.hdz@gmail.com',  
+    @tipoError = @tipoError OUTPUT,                
+    @mensaje = @mensaje OUTPUT;                  
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
+-----------STORE PROCEDURE PARA CAMBIAR CONTRASENA DEL CLIENTE
+
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC [dbo].[sp_cambiar_contrasena] 
+    @correo = 'emil.hdz@gmail.com',             
+    @contrasenaActual = 'password123',           -- La contraseña actual del usuario
+    @nuevaContrasena = 'NuevaContrasena456',      -- La nueva contraseña a establecer
+    @tipoError = @tipoError OUTPUT,               
+    @mensaje = @mensaje OUTPUT;                   
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
