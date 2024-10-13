@@ -185,7 +185,7 @@ GO
 -- Description: <agregar nueva tienda>
 -- ############################
 
-CREATE OR ALTER PROCEDURE [dbo].[spAgregarTienda]
+CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_tienda]
 
     @Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
