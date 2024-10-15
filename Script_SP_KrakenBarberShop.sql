@@ -1137,8 +1137,8 @@ GO
 -- Description: <Obtener las tiendas por código postal>
 -- ############################
 
-ALTER   PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
-    @CodigoPostal NVARCHAR(10) -- Ajusta el tamaño según tu base de datos
+CREATE OR ALTER   PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
+    @CodigoPostal NVARCHAR(10)
 AS
 BEGIN
     SELECT 
