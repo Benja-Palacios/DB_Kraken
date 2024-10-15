@@ -1060,7 +1060,6 @@ GO
 -- #endregion
 ------*************************************************************
 
-
 -- #region sp_cambiar_contrasena
 -- ############################
 -- STORE PROCEDURE PARA CAMBIAR CONTRASEÑA
@@ -1127,6 +1126,35 @@ BEGIN
 END
 GO
 print 'Operación correcta, sp_cambiar_contrasena ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+-- #region sp_obtener_tiendas_por_cp
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDAS POR CÓDIGO POSTAL
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtener las tiendas por código postal>
+-- ############################
+
+ALTER   PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
+    @CodigoPostal NVARCHAR(10) -- Ajusta el tamaño según tu base de datos
+AS
+BEGIN
+    SELECT 
+        T.id AS TiendaID,                
+        T.nombre AS NombreTienda,         
+        T.imagen AS ImagenTienda               
+    FROM 
+        BSK_Tienda T
+    INNER JOIN 
+        BSK_DireccionTienda D ON T.id = D.tiendaId
+    WHERE 
+        D.CP = @CodigoPostal  -- Filtrar por código postal
+    GROUP BY 
+        T.id, T.nombre, T.imagen;  -- Agrupar por campos de tienda
+END;
+print 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
