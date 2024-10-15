@@ -1015,6 +1015,7 @@ BEGIN
         BEGIN
             SET @tipoError = 4;
             SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -1023,6 +1024,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'Cliente no encontrado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -1031,6 +1033,7 @@ BEGIN
         BEGIN
             SET @tipoError = 2;
             SET @mensaje = 'El correo ya está en uso por otro cliente';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -1048,10 +1051,12 @@ BEGIN
 
         SET @tipoError = 0;
         SET @mensaje = 'Datos actualizados correctamente';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
     END TRY
     BEGIN CATCH
         SET @tipoError = 3;
         SET @mensaje = ERROR_MESSAGE();
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
     END CATCH
 END
 GO
