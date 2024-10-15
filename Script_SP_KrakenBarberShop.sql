@@ -1094,6 +1094,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1;
             SET @mensaje = 'El correo no está registrado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 		    
@@ -1102,6 +1103,7 @@ BEGIN
         BEGIN
             SET @tipoError = 2;
             SET @mensaje = 'Contraseña actual incorrecta';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -1114,10 +1116,13 @@ BEGIN
 
         SET @tipoError = 0;
         SET @mensaje = 'Contraseña actualizada correctamente';
+
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
     END TRY
     BEGIN CATCH
         SET @tipoError = 3;
         SET @mensaje = ERROR_MESSAGE();
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
     END CATCH
 END
 GO
