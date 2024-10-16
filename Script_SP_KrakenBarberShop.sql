@@ -1163,3 +1163,83 @@ print 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+
+-- #region sp_obtener_calificacion_tienda
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDAS Calificadas
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtener las tiendas Calificadas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE sp_obtener_calificacion_tienda
+    @TiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        tiendaId, 
+        CAST(ROUND(AVG(CAST(calificacion AS DECIMAL(3, 2))), 2) AS DECIMAL(4, 2)) AS calificacionPromedio,
+        COUNT(calificacion) AS totalCalificaciones
+    FROM 
+        BSK_CalificacionTienda
+    WHERE 
+        tiendaId = @TiendaId
+    GROUP BY 
+        tiendaId;
+END;
+
+print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_guardar_calificacion_tienda
+-- ############################
+-- STORE PROCEDURE DE GUARDAR CALIFICACION DE LA TENDA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Guardar calificacion de las tiendas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE sp_guardar_calificacion_tienda
+    @TiendaId INT,
+    @ClienteId INT,
+    @Calificacion INT,
+	@tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+	SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si ya existe una calificación para esta tienda y cliente
+    IF EXISTS (SELECT 1 FROM BSK_CalificacionTienda WHERE tiendaId = @TiendaId AND clienteId = @ClienteId)
+    BEGIN
+        -- Si ya existe, actualizar la calificación
+        UPDATE BSK_CalificacionTienda
+        SET calificacion = @Calificacion, fechaCalificacion = GETDATE()
+        WHERE tiendaId = @TiendaId AND clienteId = @ClienteId;
+
+		SET @tipoError = 0;
+        SET @mensaje = 'Calificacion Actualizada';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+    ELSE
+    BEGIN
+        -- Si no existe, insertar una nueva calificación
+        INSERT INTO BSK_CalificacionTienda (tiendaId, clienteId, calificacion)
+        VALUES (@TiendaId, @ClienteId, @Calificacion);
+		SET @tipoError = 0;
+        SET @mensaje = 'Calificacion Agregada';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+END;
+
+print 'Operación correcta, sp_guardar_calificacion_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************

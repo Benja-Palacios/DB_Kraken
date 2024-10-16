@@ -88,3 +88,14 @@ CREATE TABLE BSK_EstilosTienda (
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
     FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
 );
+
+-- Tabla Calificaciones de las Tiendas
+CREATE TABLE BSK_CalificacionTienda (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    tiendaId INT NOT NULL,
+    clienteId INT NOT NULL,
+    calificacion INT NOT NULL CHECK (calificacion BETWEEN 1 AND 5),
+    fechaCalificacion DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
+    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id)
+);
