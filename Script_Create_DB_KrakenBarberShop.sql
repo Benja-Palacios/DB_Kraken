@@ -99,3 +99,17 @@ CREATE TABLE BSK_CalificacionTienda (
     FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
     FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id)
 );
+
+-- Tabla de Citas (Citas agendadas para estilos de las barberías)
+CREATE TABLE BSK_Citas (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    clienteId INT NOT NULL, 
+    tiendaId INT NOT NULL, 
+	direccionId INT NOT NULL, 
+    fechaCita DATETIME NOT NULL,
+    estado VARCHAR(50) NOT NULL DEFAULT 'Pendiente', -- Estado de la cita (Pendiente, Confirmada, Cancelada)
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id),
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
+    FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id)
+);

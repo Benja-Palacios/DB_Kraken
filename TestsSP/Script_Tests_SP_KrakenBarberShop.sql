@@ -199,3 +199,40 @@ EXEC [dbo].[sp_cambiar_contrasena]
     @mensaje = @mensaje OUTPUT;                   
 
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
+-----------STORE PROCEDURE PARA AGENDAR CITA
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC [dbo].[sp_agendar_cita]
+    @clienteId = 1, 
+    @tiendaId = 1, 
+    @direccionId = 2, 
+    @fechaCita = '2024-10-20 10:00:00', 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+-----------STORE PROCEDURE PARA EDITAR CITA
+DECLARE @tipoError INT, @mensaje VARCHAR(255);
+
+EXEC [dbo].[sp_editar_cita]
+    @citaId = 1, 
+    @nuevaFechaCita = '2024-11-21 15:00:00', -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+    @nuevoEstado = 'Pendiende', -----------EL ADMINISTRADOR SOLO PODRA MODIFICAR ESTE CAMPO A 'CONFIRMADA Y CANCELADA'. EL CLIENTE SOLO A 'CANCELADA'
+    @nuevaDireccionId = 2, -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
+-----------STORE PROCEDURE PARA CONSULTAR LAS CITAS DEL CLIENTE
+EXEC [dbo].[sp_consultar_citas_por_usuario]
+   @clienteId = 2;
+
+-----------STORE PROCEDURE PARA CONSULTAR CITAS AGENDADAS POR TIENDA
+EXEC [dbo].[sp_consultar_citas_por_tienda]
+
+@tiendaId = 1;

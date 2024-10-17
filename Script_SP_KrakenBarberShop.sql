@@ -1172,7 +1172,7 @@ GO
 -- Description: <Obtener las tiendas Calificadas>
 -- ############################
 
-CREATE OR ALTER PROCEDURE sp_obtener_calificacion_tienda
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_calificacion_tienda]
     @TiendaId INT
 AS
 BEGIN
@@ -1203,7 +1203,7 @@ GO
 -- Description: <Guardar calificacion de las tiendas>
 -- ############################
 
-CREATE OR ALTER PROCEDURE sp_guardar_calificacion_tienda
+CREATE OR ALTER PROCEDURE [dbo].[sp_guardar_calificacion_tienda]
     @TiendaId INT,
     @ClienteId INT,
     @Calificacion INT,
@@ -1240,6 +1240,204 @@ BEGIN
 END;
 
 print 'Operación correcta, sp_guardar_calificacion_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_agendar_cita
+-- ############################
+-- STORE PROCEDURE PARA AGENDAR CITA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Agendar cita para un cliente en una tienda específica>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_agendar_cita]
+    @clienteId INT,
+    @tiendaId INT,
+    @direccionId INT,
+    @fechaCita DATETIME,
+    @estado VARCHAR(50) = 'Pendiente',
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+	     -- Validación de nulos o vacíos
+        IF @tiendaId IS NULL OR LTRIM(RTRIM(@tiendaId)) = '' OR 
+           @direccionId IS NULL OR LTRIM(RTRIM(@direccionId)) = '' OR 
+           @clienteId IS NULL OR LTRIM(RTRIM(@clienteId)) = '' OR 
+           @fechaCita IS NULL OR LTRIM(RTRIM(@fechaCita)) = '' OR
+		   @estado IS NULL OR LTRIM(RTRIM(@estado)) = ''
+        BEGIN
+            SET @tipoError = 4;
+            SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+    -- Verificar si ya existe una cita para el cliente en la misma fecha y tienda
+    IF EXISTS (
+        SELECT 1 
+        FROM BSK_Citas 
+        WHERE clienteId = @clienteId 
+        AND tiendaId = @tiendaId 
+        AND fechaCita = @fechaCita
+    )
+    BEGIN
+        -- Si ya existe, retornar un mensaje de error
+        SET @tipoError = 1;
+        SET @mensaje = 'Ya existe una cita programada para este cliente en esta tienda a la misma fecha y hora.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Insertar la nueva cita en la tabla BSK_Citas
+    INSERT INTO BSK_Citas (clienteId, tiendaId, direccionId, fechaCita, estado)
+    VALUES (@clienteId, @tiendaId, @direccionId, @fechaCita, @estado);
+
+    -- Retornar mensaje de éxito
+    SET @tipoError = 0;
+    SET @mensaje = 'Cita agendada exitosamente.';
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+END;
+
+print 'Operación correcta, sp_agendar_cita ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_editar_cita
+-- ############################
+-- STORE PROCEDURE PARA EDITAR CITA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Editar el estado, fecha y dirección de una cita existente>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cita]
+    @citaId INT,
+    @nuevaFechaCita DATETIME,
+    @nuevoEstado VARCHAR(50),
+    @nuevaDireccionId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si la cita existe
+    IF NOT EXISTS (SELECT 1 FROM BSK_Citas WHERE id = @citaId)
+    BEGIN
+        SET @tipoError = 1;
+        SET @mensaje = 'La cita no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+     -- Validación de nulos o vacíos
+     IF @nuevaFechaCita IS NULL OR LTRIM(RTRIM(@nuevaFechaCita)) = '' OR 
+           @nuevoEstado IS NULL OR LTRIM(RTRIM(@nuevoEstado)) = '' OR 
+           @nuevaDireccionId IS NULL OR LTRIM(RTRIM(@nuevaDireccionId)) = '' 
+        
+     BEGIN
+            SET @tipoError = 4;
+            SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+     END
+
+    -- Actualizar los datos de la cita
+    UPDATE BSK_Citas
+    SET fechaCita = @nuevaFechaCita,
+        estado = @nuevoEstado,
+        direccionId = @nuevaDireccionId
+    WHERE id = @citaId;
+
+    -- Retornar mensaje de éxito
+    SET @tipoError = 0;
+    SET @mensaje = 'Cita actualizada correctamente.';
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+END;
+
+print 'Operación correcta, sp_editar_cita ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_consultar_citas_por_usuario
+-- ############################
+-- STORE PROCEDURE PARA CONSULTAR CITAS POR CLIENTE
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Consultar todas las citas de un cliente específico>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
+    @clienteId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Seleccionar todas las citas del cliente
+    SELECT 
+        C.id AS CitaId,
+        C.fechaCita,
+        C.estado,
+        T.nombre AS Tienda,
+        D.ubicacion AS Direccion,
+        C.fechaCreacion
+    FROM BSK_Citas C
+    INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
+    INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+    WHERE C.clienteId = @clienteId
+    ORDER BY C.fechaCita DESC;
+END;
+
+print 'Operación correcta, sp_consultar_citas_por_usuario ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_consultar_citas_por_tienda
+-- ############################
+-- STORE PROCEDURE PARA CONSULTAR CITAS AGENDADAS POR TIENDA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Consultar todas las citas agendadas para una tienda específica>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_tienda]
+    @tiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Seleccionar todas las citas agendadas para la tienda
+    SELECT 
+        C.id AS CitaId,
+        C.fechaCita,
+        C.estado,
+        Cl.nombre + ' ' + Cl.apellidoPaterno AS Cliente,
+        D.ubicacion AS Direccion,
+        C.fechaCreacion
+    FROM BSK_Citas C
+    INNER JOIN BSK_Cliente Cl ON C.clienteId = Cl.id
+    INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+    WHERE C.tiendaId = @tiendaId
+    ORDER BY C.fechaCita DESC;
+END;
+
+print 'Operación correcta, sp_consultar_citas_por_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
