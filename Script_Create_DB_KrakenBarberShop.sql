@@ -22,8 +22,13 @@ CREATE TABLE BSK_Cliente (
     apellidoPaterno VARCHAR(50) NOT NULL,
     apellidoMaterno VARCHAR(50),
     rolId INT NOT NULL,
+    direccionId INT NOT NULL,
+    tiendaId INT NOT NULL,
+    estado VARCHAR(10) NOT NULL DEFAULT 'Activo',
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
-    FOREIGN KEY (rolId) REFERENCES BSK_Rol(id)
+    FOREIGN KEY (rolId) REFERENCES BSK_Rol(id),
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
+    FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id),
 );
 
 -- Tabla de Autenticacion (solo autenticacion)
@@ -56,7 +61,9 @@ CREATE TABLE BSK_Tienda (
     nombre VARCHAR(100) NOT NULL,
     imagen VARCHAR(255) NOT NULL, 
     clienteId INT NOT NULL, 
-    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    horarioApertura TIME NOT NULL,
+    horarioCierre TIME NOT NULL, 
     FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id) 
 );
 
@@ -105,11 +112,19 @@ CREATE TABLE BSK_Citas (
     id INT IDENTITY(1,1) PRIMARY KEY,
     clienteId INT NOT NULL, 
     tiendaId INT NOT NULL, 
-	direccionId INT NOT NULL, 
-    fechaCita DATETIME NOT NULL,
+	direccionId INT NOT NULL,
+    empleadoId INT NOT NULL,
+    fechaCita VARCHAR(20) NOT NULL,
+    horaCita TIME NOT NULL,
     estado VARCHAR(50) NOT NULL DEFAULT 'Pendiente', -- Estado de la cita (Pendiente, Confirmada, Cancelada)
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
     FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id),
     FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
-    FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id)
+    FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id),
+    FOREIGN KEY (empleadoId) REFERENCES BSK_Cliente(id)
 );
+
+-- Crear índices para mejorar el rendimiento en consultas
+CREATE INDEX IX_BSK_Citas_FechaCita ON BSK_Citas(fechaCita);
+CREATE INDEX IX_BSK_Citas_ClienteId ON BSK_Citas(clienteId);
+CREATE INDEX IX_BSK_Citas_TiendaId ON BSK_Citas(tiendaId);
