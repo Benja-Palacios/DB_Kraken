@@ -15,6 +15,24 @@ EXEC [dbo].[sp_registrar_cliente]
 
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
+-----------STORE PROCEDURE PARA REGISTRAR EMPLEADOS 
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC [dbo].[sp_registrar_empleado] 
+    @nombre = 'Juan',
+    @apellidoPaterno = 'Pérez',
+    @apellidoMaterno = 'Gómez',
+    @correo = 'juan.perez@example.com',
+    @contrasena = 'contraseña123',
+    @rolId = 1, 
+	@direccionId = 1, 
+    @tiendaId = 1,
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
 -----------STORE PROCEDURE DE INICIO DE SESION
 
 EXEC [dbo].[sp_iniciar_sesion]
@@ -23,10 +41,12 @@ EXEC [dbo].[sp_iniciar_sesion]
 
 -----------STORE PROCEDURE DE AGREGAR TIENDAS
 
-EXEC [dbo].[spAgregarTienda]
-    @Nombre = 'NombreTienda',
+EXEC [dbo].[sp_agregar_tienda]
+    @Nombre = 'NombreTienda2',
     @Imagen = 'ruta/imagen.jpg',
-    @ClienteId = 2;
+	@HorarioApertura = '11:00',
+    @HorarioCierre = '19:00',
+    @ClienteId = 1;
 
 -----------STORE PROCEDURE DE EDITAR TIENDAS
 DECLARE @tipoError INT;
@@ -36,6 +56,8 @@ EXEC dbo.sp_editar_tienda
     @TiendaId = 1, 
     @Nombre = 'Nombre de Tienda', 
     @Imagen = 'url_imagen', 
+	@HorarioApertura = '9:00',
+    @HorarioCierre = '20:00',
     @ClienteId = 1, 
     @tipoError = @tipoError OUTPUT, 
     @mensaje = @mensaje OUTPUT;
@@ -162,12 +184,12 @@ EXEC [dbo].[sp_obtener_tiendas_por_cliente]
 -----------STORE PROCEDURE DE OBTENER ESTILOS DE LAS TIENDA
 
 EXEC [dbo].[sp_obtener_estilos_por_tienda] 
-    @TiendaID = 3
+    @TiendaID = 1
 
 -----------STORE PROCEDURE DE OBTENER TIENDA POR ID
 
 EXEC [dbo].[sp_obtener_tienda_por_id] 
-    @TiendaID = 3
+    @TiendaID = 1
 
 -----------STORE PROCEDURE DE EDITAR DATOS DEL CLIENTE
 
@@ -206,9 +228,11 @@ DECLARE @mensaje VARCHAR(255);
 
 EXEC [dbo].[sp_agendar_cita]
     @clienteId = 1, 
+	@empleadoId = 1,
     @tiendaId = 1, 
-    @direccionId = 2, 
-    @fechaCita = '2024-10-20 10:00:00', 
+    @direccionId = 1, 
+    @fechaCita = '2024-10-20', 
+	@horaCita = '10:00:00', 
     @tipoError = @tipoError OUTPUT, 
     @mensaje = @mensaje OUTPUT;
 
@@ -219,9 +243,11 @@ DECLARE @tipoError INT, @mensaje VARCHAR(255);
 
 EXEC [dbo].[sp_editar_cita]
     @citaId = 1, 
-    @nuevaFechaCita = '2024-11-21 15:00:00', -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+    @nuevaFechaCita = '2024-11-21 ', -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+	@nuevahoraCita = '10:00', -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
     @nuevoEstado = 'Pendiende', -----------EL ADMINISTRADOR SOLO PODRA MODIFICAR ESTE CAMPO A 'CONFIRMADA Y CANCELADA'. EL CLIENTE SOLO A 'CANCELADA'
-    @nuevaDireccionId = 2, -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+    @nuevaDireccionId = 1, -- SOLO EL CLIENTE PUEDE MODIFICAR ESTE CAMPO
+	@nuevoempleadoId = 2,
     @tipoError = @tipoError OUTPUT, 
     @mensaje = @mensaje OUTPUT;
 
@@ -230,9 +256,27 @@ SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
 -----------STORE PROCEDURE PARA CONSULTAR LAS CITAS DEL CLIENTE
 EXEC [dbo].[sp_consultar_citas_por_usuario]
-   @clienteId = 2;
+   @clienteId = 1;
 
 -----------STORE PROCEDURE PARA CONSULTAR CITAS AGENDADAS POR TIENDA
 EXEC [dbo].[sp_consultar_citas_por_tienda]
 
 @tiendaId = 1;
+
+-----------STORE PROCEDURE PARA CONSULTAR HORARIOS DISPONIBLES PARA LAS CITAS
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC [dbo].[sp_obtener_horarios_disponibles] 
+    @tiendaId = 2, 
+    @direccionId = 1, 
+    @fechaSeleccionada = '2024-11-21', 
+    @empleadoId = 2,
+    @duracionMinutos = 60, 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
+
+

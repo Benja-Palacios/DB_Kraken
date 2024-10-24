@@ -1,5 +1,6 @@
 -- Base de datos KraenBarberShop
 CREATE DATABASE KraenBarberShop;
+GO
 USE KraenBarberShop;
 GO
 
@@ -15,56 +16,15 @@ CREATE TABLE BSK_Rol (
     nombre VARCHAR(50) NOT NULL UNIQUE
 );
 
--- Tabla de Customer (Informacion personal de los clientes/usuarios)
-CREATE TABLE BSK_Cliente (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
-    apellidoPaterno VARCHAR(50) NOT NULL,
-    apellidoMaterno VARCHAR(50),
-    rolId INT NOT NULL,
-    direccionId INT NOT NULL,
-    tiendaId INT NOT NULL,
-    estado VARCHAR(10) NOT NULL DEFAULT 'Activo',
-    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
-    FOREIGN KEY (rolId) REFERENCES BSK_Rol(id),
-    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
-    FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id),
-);
-
--- Tabla de Autenticacion (solo autenticacion)
-CREATE TABLE BSK_Autenticacion (
-    id INT IDENTITY(1,1) PRIMARY KEY,       
-    correo VARCHAR(100) NOT NULL UNIQUE,    
-    contrasena VARCHAR(255) NOT NULL,      
-    clienteId INT NOT NULL,               
-    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id)
-);
-
-CREATE UNIQUE INDEX IX_BSK_Autenticacion_Correo ON BSK_Autenticacion(correo);
-
-
-INSERT INTO BSK_Rol (nombre)
-VALUES 
-('Administrador'),
-('Empleado'),
-('Cliente');
-
--- ############################
--- Autor: <Emil Jesus Hernandez Avilez>
--- Create Date: <6 de octubre del 2024>
--- Description: <Crear tabla Tienda y DireccionTienda>
--- ############################
-
 -- Tabla de Tienda (Información de las barberías)
 CREATE TABLE BSK_Tienda (
     id INT IDENTITY(1,1) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     imagen VARCHAR(255) NOT NULL, 
-    clienteId INT NOT NULL, 
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
     horarioApertura TIME NOT NULL,
-    horarioCierre TIME NOT NULL, 
-    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id) 
+    horarioCierre TIME NOT NULL,
+    clienteId INT NOT NULL
 );
 
 -- Tabla de DireccionTienda (Direcciones de las barberías)
@@ -79,11 +39,42 @@ CREATE TABLE BSK_DireccionTienda (
     pais VARCHAR(50) NOT NULL,
     noExterior VARCHAR(10) NOT NULL,
     telefono VARCHAR(10) NOT NULL, 
-    referencia VARCHAR(255), 
-    tiendaId INT NOT NULL, 
-    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
-    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
+    referencia VARCHAR(255),
+    tiendaId INT NOT NULL,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE()
 );
+
+-- Tabla de Cliente (Informacion personal de los clientes/usuarios)
+CREATE TABLE BSK_Cliente (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellidoPaterno VARCHAR(50) NOT NULL,
+    apellidoMaterno VARCHAR(50),
+    rolId INT NOT NULL,
+    direccionId INT,
+    tiendaId INT,
+    estado VARCHAR(10) NOT NULL DEFAULT 'Activo',
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
+    FOREIGN KEY (rolId) REFERENCES BSK_Rol(id)
+);
+
+-- Tabla de Autenticacion (solo autenticacion)
+CREATE TABLE BSK_Autenticacion (
+    id INT IDENTITY(1,1) PRIMARY KEY,       
+    correo VARCHAR(100) NOT NULL UNIQUE,    
+    contrasena VARCHAR(255) NOT NULL,      
+    clienteId INT NOT NULL,               
+    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id)
+);
+
+CREATE UNIQUE INDEX IX_BSK_Autenticacion_Correo ON BSK_Autenticacion(correo);
+
+-- Insertar roles
+INSERT INTO BSK_Rol (nombre)
+VALUES 
+('Administrador'),
+('Empleado'),
+('Cliente');
 
 -- Tabla de Estilos (Estilos de las barberías)
 CREATE TABLE BSK_EstilosTienda (
@@ -91,9 +82,8 @@ CREATE TABLE BSK_EstilosTienda (
     nombre VARCHAR(100) NOT NULL,   
     imagen VARCHAR(255) NOT NULL, 
 	descripcion VARCHAR(255), 
-    tiendaId INT NOT NULL, 
-    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(), 
-    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id)
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    tiendaId INT  NOT NULL
 );
 
 -- Tabla Calificaciones de las Tiendas
@@ -128,3 +118,26 @@ CREATE TABLE BSK_Citas (
 CREATE INDEX IX_BSK_Citas_FechaCita ON BSK_Citas(fechaCita);
 CREATE INDEX IX_BSK_Citas_ClienteId ON BSK_Citas(clienteId);
 CREATE INDEX IX_BSK_Citas_TiendaId ON BSK_Citas(tiendaId);
+
+-- ############################
+-- Añadir claves foráneas tras la creación de las tablas
+-- ############################
+
+-- Añadir claves foráneas a BSK_Cliente
+ALTER TABLE BSK_Cliente
+ADD CONSTRAINT FK_BSK_Cliente_Tienda FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id);
+
+ALTER TABLE BSK_Cliente
+ADD CONSTRAINT FK_BSK_Cliente_Direccion FOREIGN KEY (direccionId) REFERENCES BSK_DireccionTienda(id);
+
+-- Añadir clave foránea a BSK_Tienda
+ALTER TABLE BSK_Tienda
+ADD CONSTRAINT FK_BSK_Tienda_Cliente FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id);
+
+-- Añadir clave foránea a BSK_DireccionTienda
+ALTER TABLE BSK_DireccionTienda
+ADD CONSTRAINT FK_BSK_DireccionTienda_Tienda FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id);
+
+-- Añadir clave foránea a BSK_EstilosTienda
+ALTER TABLE BSK_EstilosTienda
+ADD CONSTRAINT FK_BSK_EstilosTienda_Tienda FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id);

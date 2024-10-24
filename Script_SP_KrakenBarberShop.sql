@@ -1263,7 +1263,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_agendar_cita]
     @tiendaId INT,
     @direccionId INT,
     @empleadoId INT,
-    @fechaCita VARCHAR(20), -- Cambiar a DATETIME si decides que sea así
+    @fechaCita VARCHAR(20), 
     @horaCita TIME,
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
@@ -1352,7 +1352,9 @@ GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cita]
     @citaId INT,
+	@nuevoempleadoId INT,
     @nuevaFechaCita DATETIME,
+	@nuevahoraCita TIME,
     @nuevoEstado VARCHAR(50),
     @nuevaDireccionId INT,
     @tipoError INT OUTPUT,
@@ -1377,7 +1379,9 @@ BEGIN
      -- Validación de nulos o vacíos
      IF @nuevaFechaCita IS NULL OR LTRIM(RTRIM(@nuevaFechaCita)) = '' OR 
            @nuevoEstado IS NULL OR LTRIM(RTRIM(@nuevoEstado)) = '' OR 
-           @nuevaDireccionId IS NULL OR LTRIM(RTRIM(@nuevaDireccionId)) = '' 
+           @nuevaDireccionId IS NULL OR LTRIM(RTRIM(@nuevaDireccionId)) = ''  OR 
+           @nuevahoraCita IS NULL OR LTRIM(RTRIM(@nuevahoraCita)) = '' OR 
+           @nuevoempleadoId IS NULL OR LTRIM(RTRIM(@nuevoempleadoId)) = '' 
         
      BEGIN
             SET @tipoError = 4;
@@ -1389,8 +1393,10 @@ BEGIN
     -- Actualizar los datos de la cita
     UPDATE BSK_Citas
     SET fechaCita = @nuevaFechaCita,
+	    horaCita = @nuevahoraCita,
         estado = @nuevoEstado,
-        direccionId = @nuevaDireccionId
+        direccionId = @nuevaDireccionId,
+		empleadoId = @nuevoempleadoId
     WHERE id = @citaId;
 
     -- Retornar mensaje de éxito
@@ -1423,12 +1429,14 @@ BEGIN
         C.id AS CitaId,
         C.fechaCita,
         C.estado,
+		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
         T.nombre AS Tienda,
         D.ubicacion AS Direccion,
         C.fechaCreacion
     FROM BSK_Citas C
     INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
     INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+	INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
     WHERE C.clienteId = @clienteId
     ORDER BY C.fechaCita DESC;
 END;
@@ -1473,7 +1481,13 @@ GO
 ------*************************************************************
 
 -- #region sp_registrar_empleado
--- Registrar Empleados
+-- ############################
+-- STORE PROCEDURE PARA REGISTAR EMPLEADOS 
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de octubre 2024>
+-- Description: <Registra Empleados>
+-- ############################
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_registrar_empleado]
     @nombre VARCHAR(50),               
     @apellidoPaterno VARCHAR(50),      
@@ -1553,7 +1567,16 @@ GO
 -- #endregion
 -----**************************************************************
 
+
+
 -- #region sp_obtener_horarios_disponibles
+-- ############################
+-- STORE PROCEDURE PARA OBTENER HORARIOS DISPONIBLES 
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de octubre 2024>
+-- Description: <Obtiene los horarios disponibles>
+-- ############################
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_horarios_disponibles]
     @tiendaId INT,
     @direccionId INT,
