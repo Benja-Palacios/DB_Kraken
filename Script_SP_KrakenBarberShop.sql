@@ -1732,3 +1732,21 @@ print 'Operacion correcta, sp_obtener_horarios_disponibles ejecutado.'
 GO
 -- #endregion
 -----**************************************************************
+---****************************************************************
+CREATE OR ALTER PROCEDURE sp_trabajadores_por_direccion (
+    @DireccionId INT
+)
+AS
+BEGIN
+    SELECT 
+        C.id AS trabajadorId,
+        CONCAT(C.nombre, ' ', C.apellidoPaterno, ' ', C.apellidoMaterno) AS nombreCompleto
+    FROM 
+        BSK_Cliente C
+    INNER JOIN 
+        BSK_DireccionTienda DT ON C.direccionId = DT.id
+    WHERE 
+        DT.id = @DireccionId
+        AND C.tiendaId IS NOT NULL  -- Asegura que tenga asignado un tiendaId
+        AND C.direccionId IS NOT NULL; -- Asegura que tenga asignado un direccionId
+END;
