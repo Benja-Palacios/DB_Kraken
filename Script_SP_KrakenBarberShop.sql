@@ -1148,25 +1148,89 @@ GO
 -- Description: <Obtener las tiendas por código postal>
 -- ############################
 
-CREATE OR ALTER   PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
-    @CodigoPostal NVARCHAR(10)
+ALTER PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
+    @Filtro NVARCHAR(255),  -- Parámetro de búsqueda, puede ser el nombre del municipio o estado
+    @EsCodigoPostal BIT     -- Bandera: 1 = Código Postal, 0 = Dirección Completa
 AS
 BEGIN
+    SET NOCOUNT ON;
+    
+    -- Declarar variables para municipio y estado
+    DECLARE @Municipio NVARCHAR(255) = NULL;
+    DECLARE @Estado NVARCHAR(255) = NULL;
+
+    -- Separar el filtro en municipio y estado si se busca por dirección completa
+    IF @EsCodigoPostal = 0
+    BEGIN
+        -- Dividir el filtro en municipio y estado si se encuentra una coma
+        IF CHARINDEX(',', @Filtro) > 0
+        BEGIN
+            SET @Municipio = LTRIM(RTRIM(LEFT(@Filtro, CHARINDEX(',', @Filtro) - 1)));
+            SET @Estado = LTRIM(RTRIM(SUBSTRING(@Filtro, CHARINDEX(',', @Filtro) + 1, LEN(@Filtro))));
+        END
+        ELSE
+        BEGIN
+            -- Si no hay coma, asumir que es solo el estado
+            SET @Estado = @Filtro;
+        END
+    END;
+
+    -- Declarar tabla temporal para almacenar los resultados
+    DECLARE @Resultados TABLE (
+        TiendaID INT,
+        NombreTienda NVARCHAR(255),
+        ImagenTienda NVARCHAR(255),
+        HorarioApertura TIME,
+        HorarioCierre TIME
+    );
+
+    -- Intentar buscar con el municipio y el estado
+    INSERT INTO @Resultados (TiendaID, NombreTienda, ImagenTienda, HorarioApertura, HorarioCierre)
     SELECT 
         T.id AS TiendaID,                
         T.nombre AS NombreTienda,         
-        T.imagen AS ImagenTienda               
+        T.imagen AS ImagenTienda, 
+        T.horarioApertura AS HorarioApertura,
+        T.horarioCierre AS HorarioCierre
     FROM 
         BSK_Tienda T
     INNER JOIN 
         BSK_DireccionTienda D ON T.id = D.tiendaId
     WHERE 
-        D.CP = @CodigoPostal  -- Filtrar por código postal
+        (
+            @EsCodigoPostal = 1 AND D.CP = @Filtro  -- Búsqueda por Código Postal
+        ) OR 
+        (
+            @EsCodigoPostal = 0 AND D.municipio = @Municipio
+        )
     GROUP BY 
-        T.id, T.nombre, T.imagen;  -- Agrupar por campos de tienda
+        T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
+
+    -- Si no se encontraron resultados con el municipio, buscar solo por el estado
+    IF NOT EXISTS (SELECT 1 FROM @Resultados)
+    BEGIN
+        INSERT INTO @Resultados (TiendaID, NombreTienda, ImagenTienda, HorarioApertura, HorarioCierre)
+        SELECT 
+            T.id AS TiendaID,                
+            T.nombre AS NombreTienda,         
+            T.imagen AS ImagenTienda,
+            T.horarioApertura AS HorarioApertura,
+            T.horarioCierre AS HorarioCierre
+        FROM 
+            BSK_Tienda T
+        INNER JOIN 
+            BSK_DireccionTienda D ON T.id = D.tiendaId
+        WHERE 
+            @EsCodigoPostal = 0 AND D.estado = @Estado
+        GROUP BY 
+            T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
+    END
+
+    -- Retornar los resultados
+    SELECT * FROM @Resultados;
+
 END;
-print 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
-GO
+PRINT 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
 -- #endregion
 ------*************************************************************
 
