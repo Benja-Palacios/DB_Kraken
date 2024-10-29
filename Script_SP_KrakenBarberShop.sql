@@ -1148,9 +1148,9 @@ GO
 -- Description: <Obtener las tiendas por código postal>
 -- ############################
 
-ALTER PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
     @Filtro NVARCHAR(255),  -- Parámetro de búsqueda, puede ser el nombre del municipio o estado
-    @EsCodigoPostal BIT     -- Bandera: 1 = Código Postal, 0 = Dirección Completa
+    @EsCodigoPostal BIT      -- Bandera: 1 = Código Postal, 0 = Dirección Completa
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1198,13 +1198,14 @@ BEGIN
         BSK_DireccionTienda D ON T.id = D.tiendaId
     WHERE 
         (
-            @EsCodigoPostal = 1 AND D.CP = @Filtro  -- Búsqueda por Código Postal
-        ) OR 
+            (@EsCodigoPostal = 1 AND D.CP = @Filtro)  -- Búsqueda por Código Postal
+        ) 
+        OR 
         (
             @EsCodigoPostal = 0 AND D.municipio = @Municipio
         )
     GROUP BY 
-        T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
+        T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;
 
     -- Si no se encontraron resultados con el municipio, buscar solo por el estado
     IF NOT EXISTS (SELECT 1 FROM @Resultados)
@@ -1223,44 +1224,15 @@ BEGIN
         WHERE 
             @EsCodigoPostal = 0 AND D.estado = @Estado
         GROUP BY 
-            T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
-    END
+            T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;
+    END;
 
     -- Retornar los resultados
     SELECT * FROM @Resultados;
 
 END;
+GO
 PRINT 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
--- #endregion
-------*************************************************************
-
--- #region sp_obtener_calificacion_tienda
--- ############################
--- STORE PROCEDURE DE OBTENER TIENDAS Calificadas
--- Autor: <Emil Jesus Hernandez Avilez>
--- Create Data: <14 de octubre 2024>
--- Description: <Obtener las tiendas Calificadas>
--- ############################
-
-CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_calificacion_tienda]
-    @TiendaId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT 
-        tiendaId, 
-        CAST(ROUND(AVG(CAST(calificacion AS DECIMAL(3, 2))), 2) AS DECIMAL(4, 2)) AS calificacionPromedio,
-        COUNT(calificacion) AS totalCalificaciones
-    FROM 
-        BSK_CalificacionTienda
-    WHERE 
-        tiendaId = @TiendaId
-    GROUP BY 
-        tiendaId;
-END;
-
-print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
