@@ -189,7 +189,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_tienda]
 
     @Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
-    @ClienteId INT
+    @ClienteId INT,
+    @HorarioApertura TIME,
+    @HorarioCierre TIME
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -221,8 +223,8 @@ BEGIN
         END
 
         -- Inserción de la tienda
-        INSERT INTO BSK_Tienda (nombre, imagen, clienteId)
-        VALUES (@Nombre, @Imagen, @ClienteId);
+        INSERT INTO BSK_Tienda (nombre, imagen, clienteId, horarioApertura, horarioCierre)
+        VALUES (@Nombre, @Imagen, @ClienteId, @HorarioApertura, @HorarioCierre);
 
         -- Retornar el ID de la tienda recién agregada
         DECLARE @TiendaId INT;
@@ -263,6 +265,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_tienda]
     @Nombre VARCHAR(100),
     @Imagen VARCHAR(255),
     @ClienteId INT,
+    @HorarioApertura TIME,
+    @HorarioCierre TIME,
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -308,7 +312,9 @@ BEGIN
         UPDATE BSK_Tienda
         SET nombre = @Nombre,
             imagen = @Imagen,
-            clienteId = @ClienteId
+            clienteId = @ClienteId,
+            horarioApertura = @HorarioApertura,
+            horarioCierre = @HorarioCierre
         WHERE id = @TiendaId;
 
         -- Verificar si se realizaron cambios
@@ -1142,24 +1148,615 @@ GO
 -- Description: <Obtener las tiendas por código postal>
 -- ############################
 
-CREATE OR ALTER   PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
-    @CodigoPostal NVARCHAR(10)
+ALTER PROCEDURE [dbo].[sp_obtener_tiendas_por_cp]
+    @Filtro NVARCHAR(255),  -- Parámetro de búsqueda, puede ser el nombre del municipio o estado
+    @EsCodigoPostal BIT     -- Bandera: 1 = Código Postal, 0 = Dirección Completa
 AS
 BEGIN
+    SET NOCOUNT ON;
+    
+    -- Declarar variables para municipio y estado
+    DECLARE @Municipio NVARCHAR(255) = NULL;
+    DECLARE @Estado NVARCHAR(255) = NULL;
+
+    -- Separar el filtro en municipio y estado si se busca por dirección completa
+    IF @EsCodigoPostal = 0
+    BEGIN
+        -- Dividir el filtro en municipio y estado si se encuentra una coma
+        IF CHARINDEX(',', @Filtro) > 0
+        BEGIN
+            SET @Municipio = LTRIM(RTRIM(LEFT(@Filtro, CHARINDEX(',', @Filtro) - 1)));
+            SET @Estado = LTRIM(RTRIM(SUBSTRING(@Filtro, CHARINDEX(',', @Filtro) + 1, LEN(@Filtro))));
+        END
+        ELSE
+        BEGIN
+            -- Si no hay coma, asumir que es solo el estado
+            SET @Estado = @Filtro;
+        END
+    END;
+
+    -- Declarar tabla temporal para almacenar los resultados
+    DECLARE @Resultados TABLE (
+        TiendaID INT,
+        NombreTienda NVARCHAR(255),
+        ImagenTienda NVARCHAR(255),
+        HorarioApertura TIME,
+        HorarioCierre TIME
+    );
+
+    -- Intentar buscar con el municipio y el estado
+    INSERT INTO @Resultados (TiendaID, NombreTienda, ImagenTienda, HorarioApertura, HorarioCierre)
     SELECT 
         T.id AS TiendaID,                
         T.nombre AS NombreTienda,         
-        T.imagen AS ImagenTienda               
+        T.imagen AS ImagenTienda, 
+        T.horarioApertura AS HorarioApertura,
+        T.horarioCierre AS HorarioCierre
     FROM 
         BSK_Tienda T
     INNER JOIN 
         BSK_DireccionTienda D ON T.id = D.tiendaId
     WHERE 
-        D.CP = @CodigoPostal  -- Filtrar por código postal
+        (
+            @EsCodigoPostal = 1 AND D.CP = @Filtro  -- Búsqueda por Código Postal
+        ) OR 
+        (
+            @EsCodigoPostal = 0 AND D.municipio = @Municipio
+        )
     GROUP BY 
-        T.id, T.nombre, T.imagen;  -- Agrupar por campos de tienda
+        T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
+
+    -- Si no se encontraron resultados con el municipio, buscar solo por el estado
+    IF NOT EXISTS (SELECT 1 FROM @Resultados)
+    BEGIN
+        INSERT INTO @Resultados (TiendaID, NombreTienda, ImagenTienda, HorarioApertura, HorarioCierre)
+        SELECT 
+            T.id AS TiendaID,                
+            T.nombre AS NombreTienda,         
+            T.imagen AS ImagenTienda,
+            T.horarioApertura AS HorarioApertura,
+            T.horarioCierre AS HorarioCierre
+        FROM 
+            BSK_Tienda T
+        INNER JOIN 
+            BSK_DireccionTienda D ON T.id = D.tiendaId
+        WHERE 
+            @EsCodigoPostal = 0 AND D.estado = @Estado
+        GROUP BY 
+            T.id, T.nombre, T.imagen, T.horarioApertura, T.horarioCierre;  -- Agrupar por campos de tienda
+    END
+
+    -- Retornar los resultados
+    SELECT * FROM @Resultados;
+
 END;
-print 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
+PRINT 'Operación correcta, sp_obtener_tiendas_por_cp ejecutado.';
+-- #endregion
+------*************************************************************
+
+-- #region sp_obtener_calificacion_tienda
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDAS Calificadas
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtener las tiendas Calificadas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_calificacion_tienda]
+    @TiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        tiendaId, 
+        CAST(ROUND(AVG(CAST(calificacion AS DECIMAL(3, 2))), 2) AS DECIMAL(4, 2)) AS calificacionPromedio,
+        COUNT(calificacion) AS totalCalificaciones
+    FROM 
+        BSK_CalificacionTienda
+    WHERE 
+        tiendaId = @TiendaId
+    GROUP BY 
+        tiendaId;
+END;
+
+print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+
+-- #region sp_guardar_calificacion_tienda
+-- ############################
+-- STORE PROCEDURE DE GUARDAR CALIFICACION DE LA TENDA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Guardar calificacion de las tiendas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_guardar_calificacion_tienda]
+    @TiendaId INT,
+    @ClienteId INT,
+    @Calificacion INT,
+	@tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+	SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si ya existe una calificación para esta tienda y cliente
+    IF EXISTS (SELECT 1 FROM BSK_CalificacionTienda WHERE tiendaId = @TiendaId AND clienteId = @ClienteId)
+    BEGIN
+        -- Si ya existe, actualizar la calificación
+        UPDATE BSK_CalificacionTienda
+        SET calificacion = @Calificacion, fechaCalificacion = GETDATE()
+        WHERE tiendaId = @TiendaId AND clienteId = @ClienteId;
+
+		SET @tipoError = 0;
+        SET @mensaje = 'Calificacion Actualizada';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+    ELSE
+    BEGIN
+        -- Si no existe, insertar una nueva calificación
+        INSERT INTO BSK_CalificacionTienda (tiendaId, clienteId, calificacion)
+        VALUES (@TiendaId, @ClienteId, @Calificacion);
+		SET @tipoError = 0;
+        SET @mensaje = 'Calificacion Agregada';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+END;
+
+print 'Operación correcta, sp_guardar_calificacion_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_agendar_cita
+-- ############################
+-- STORE PROCEDURE PARA AGENDAR CITA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Agendar cita para un cliente en una tienda específica>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_agendar_cita]
+    @clienteId INT,
+    @tiendaId INT,
+    @direccionId INT,
+    @empleadoId INT,
+    @fechaCita VARCHAR(20), 
+    @horaCita TIME,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Validación de nulos
+    IF @clienteId IS NULL OR @tiendaId IS NULL OR @direccionId IS NULL OR @empleadoId IS NULL OR @fechaCita IS NULL OR @horaCita IS NULL
+    BEGIN
+        SET @tipoError = 4;
+        SET @mensaje = 'Ninguno de los campos puede estar vacío';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia de la tienda
+    IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @tiendaId)
+    BEGIN
+        SET @tipoError = 1;
+        SET @mensaje = 'La tienda seleccionada no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia de la dirección
+    IF NOT EXISTS (SELECT 1 FROM BSK_DireccionTienda WHERE id = @direccionId)
+    BEGIN
+        SET @tipoError = 2;
+        SET @mensaje = 'La dirección seleccionada no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia del barbero
+    IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @empleadoId AND estado = 'Activo')
+    BEGIN
+        SET @tipoError = 5;
+        SET @mensaje = 'El barbero seleccionado no existe o no está activo.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Verificar si ya existe una cita para el cliente en la misma tienda y fecha y hora
+    IF EXISTS (
+        SELECT 1 
+        FROM BSK_Citas 
+        WHERE clienteId = @clienteId 
+          AND tiendaId = @tiendaId 
+          AND fechaCita = @fechaCita 
+          AND horaCita = @horaCita
+    )
+    BEGIN
+        SET @tipoError = 6;
+        SET @mensaje = 'El cliente ya tiene una cita agendada para esta fecha y hora en esta tienda.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Insertar la nueva cita
+    INSERT INTO BSK_Citas (clienteId, tiendaId, direccionId, empleadoId, fechaCita, horaCita)
+    VALUES (@clienteId, @tiendaId, @direccionId, @empleadoId, @fechaCita, @horaCita);
+
+    SET @tipoError = 0;
+    SET @mensaje = 'Cita agendada con éxito.';
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+END;
+GO
+
+print 'Operación correcta, sp_agendar_cita ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_editar_cita
+-- ############################
+-- STORE PROCEDURE PARA EDITAR CITA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Editar el estado, fecha y dirección de una cita existente>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cita]
+    @citaId INT,
+	@nuevoempleadoId INT,
+    @nuevaFechaCita DATETIME,
+	@nuevahoraCita TIME,
+    @nuevoEstado VARCHAR(50),
+    @nuevaDireccionId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si la cita existe
+    IF NOT EXISTS (SELECT 1 FROM BSK_Citas WHERE id = @citaId)
+    BEGIN
+        SET @tipoError = 1;
+        SET @mensaje = 'La cita no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+     -- Validación de nulos o vacíos
+     IF @nuevaFechaCita IS NULL OR LTRIM(RTRIM(@nuevaFechaCita)) = '' OR 
+           @nuevoEstado IS NULL OR LTRIM(RTRIM(@nuevoEstado)) = '' OR 
+           @nuevaDireccionId IS NULL OR LTRIM(RTRIM(@nuevaDireccionId)) = ''  OR 
+           @nuevahoraCita IS NULL OR LTRIM(RTRIM(@nuevahoraCita)) = '' OR 
+           @nuevoempleadoId IS NULL OR LTRIM(RTRIM(@nuevoempleadoId)) = '' 
+        
+     BEGIN
+            SET @tipoError = 4;
+            SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+     END
+
+    -- Actualizar los datos de la cita
+    UPDATE BSK_Citas
+    SET fechaCita = @nuevaFechaCita,
+	    horaCita = @nuevahoraCita,
+        estado = @nuevoEstado,
+        direccionId = @nuevaDireccionId,
+		empleadoId = @nuevoempleadoId
+    WHERE id = @citaId;
+
+    -- Retornar mensaje de éxito
+    SET @tipoError = 0;
+    SET @mensaje = 'Cita actualizada correctamente.';
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+END;
+
+print 'Operación correcta, sp_editar_cita ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_consultar_citas_por_usuario
+-- ############################
+-- STORE PROCEDURE PARA CONSULTAR CITAS POR CLIENTE
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Consultar todas las citas de un cliente específico>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
+    @clienteId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Seleccionar todas las citas del cliente
+    SELECT 
+        C.id AS CitaId,
+        C.fechaCita,
+        C.estado,
+		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
+        T.nombre AS Tienda,
+        D.ubicacion AS Direccion,
+        C.fechaCreacion
+    FROM BSK_Citas C
+    INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
+    INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+	INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
+    WHERE C.clienteId = @clienteId
+    ORDER BY C.fechaCita DESC;
+END;
+
+print 'Operación correcta, sp_consultar_citas_por_usuario ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_consultar_citas_por_tienda
+-- ############################
+-- STORE PROCEDURE PARA CONSULTAR CITAS AGENDADAS POR TIENDA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <21 de octubre 2024>
+-- Description: <Consultar todas las citas agendadas para una tienda específica>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_tienda]
+    @tiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Seleccionar todas las citas agendadas para la tienda
+    SELECT 
+        C.id AS CitaId,
+        C.fechaCita,
+        C.estado,
+        Cl.nombre + ' ' + Cl.apellidoPaterno AS Cliente,
+        D.ubicacion AS Direccion,
+        C.fechaCreacion
+    FROM BSK_Citas C
+    INNER JOIN BSK_Cliente Cl ON C.clienteId = Cl.id
+    INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+    WHERE C.tiendaId = @tiendaId
+    ORDER BY C.fechaCita DESC;
+END;
+
+print 'Operación correcta, sp_consultar_citas_por_tienda ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_registrar_empleado
+-- ############################
+-- STORE PROCEDURE PARA REGISTAR EMPLEADOS 
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de octubre 2024>
+-- Description: <Registra Empleados>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_registrar_empleado]
+    @nombre VARCHAR(50),               
+    @apellidoPaterno VARCHAR(50),      
+    @apellidoMaterno VARCHAR(50),      
+    @correo VARCHAR(100),              
+    @contrasena VARCHAR(255),          
+    @rolId INT,
+	@direccionId INT,
+    @tiendaId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        -- Comienza la transacci�n
+        BEGIN TRANSACTION;
+
+        -- Validaci�n del correo electr�nico
+        IF dbo.fn_validar_correo(@correo) = 0
+        BEGIN
+            SET @tipoError = 1; 
+            SET @mensaje = 'Formato de correo inv�lido';
+            ROLLBACK TRANSACTION;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Verificar si el correo ya est� registrado
+        IF EXISTS (SELECT 1 FROM BSK_Autenticacion WHERE correo = @correo)
+        BEGIN
+            SET @tipoError = 2; 
+            SET @mensaje = 'El correo ya est� registrado';
+            ROLLBACK TRANSACTION;
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Inserci�n en la tabla Cliente
+        INSERT INTO BSK_Cliente (nombre, apellidoPaterno, apellidoMaterno, rolId, direccionId, tiendaId)
+        VALUES (@nombre, @apellidoPaterno, @apellidoMaterno, @rolId, @direccionId, @tiendaId);
+
+        DECLARE @clienteId INT = SCOPE_IDENTITY();
+        DECLARE @hashedPassword VARBINARY(64) = HASHBYTES('SHA2_256', @contrasena);
+
+        -- Inserci�n en la tabla Autenticacion
+        INSERT INTO BSK_Autenticacion (correo, contrasena, clienteId)
+        VALUES (@correo, @hashedPassword, @clienteId);
+
+        -- Confirma la transacci�n
+        COMMIT TRANSACTION;
+
+        SET @tipoError = 0;  -- 0 indica operaci�n correcta
+        SET @mensaje = 'Operaci�n correcta';
+
+        SELECT @tipoError as tipoError, @mensaje as mensaje;
+
+    END TRY
+    BEGIN CATCH
+
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        SET @tipoError = 3;  
+        SET @mensaje = ERROR_MESSAGE();
+
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END CATCH
+END
+GO
+print 'Operacion correcta, Sp_registrar_empledo ejecutado.'
+GO
+-- #endregion
+-----**************************************************************
+
+
+
+-- #region sp_obtener_horarios_disponibles
+-- ############################
+-- STORE PROCEDURE PARA OBTENER HORARIOS DISPONIBLES 
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de octubre 2024>
+-- Description: <Obtiene los horarios disponibles>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_horarios_disponibles]
+    @tiendaId INT,
+    @direccionId INT,
+    @fechaSeleccionada DATE,
+    @empleadoId INT, -- ID del barbero
+    @duracionMinutos INT = 60, -- Duración de cada cita en minutos
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Validación de nulos
+    IF @tiendaId IS NULL OR @direccionId IS NULL OR @fechaSeleccionada IS NULL OR @empleadoId IS NULL
+    BEGIN
+        SET @tipoError = 4;
+        SET @mensaje = 'Ninguno de los campos puede estar vacío';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia de la tienda
+    IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @tiendaId)
+    BEGIN
+        SET @tipoError = 1;
+        SET @mensaje = 'La tienda seleccionada no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia de la dirección
+    IF NOT EXISTS (SELECT 1 FROM BSK_DireccionTienda WHERE id = @direccionId)
+    BEGIN
+        SET @tipoError = 2;
+        SET @mensaje = 'La dirección seleccionada no existe.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Validación de existencia del barbero
+    IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @empleadoId AND estado = 'Activo')
+    BEGIN
+        SET @tipoError = 5;
+        SET @mensaje = 'El barbero seleccionado no existe o no está activo.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    DECLARE @horarioApertura TIME;
+    DECLARE @horarioCierre TIME;
+
+    -- Obtener el horario de apertura y cierre de la tienda
+    SELECT @horarioApertura = horarioApertura, @horarioCierre = horarioCierre
+    FROM BSK_Tienda
+    WHERE id = @tiendaId;
+
+    -- Validar que se obtuvo el horario
+    IF @horarioApertura IS NULL OR @horarioCierre IS NULL
+    BEGIN
+        SET @tipoError = 3;
+        SET @mensaje = 'No se encontró el horario para la tienda seleccionada.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
+    -- Generar una tabla temporal para almacenar los horarios ocupados
+    CREATE TABLE #HorariosOcupados (
+        Hora TIME,
+        EmpleadoId INT
+    );
+
+    -- Obtener las citas ya agendadas para la fecha, tienda y empleado seleccionados
+    INSERT INTO #HorariosOcupados (Hora, EmpleadoId)
+    SELECT CAST(horaCita AS TIME), empleadoId
+    FROM BSK_Citas
+    WHERE tiendaId = @tiendaId
+      AND direccionId = @direccionId
+      AND CAST(fechaCita AS DATE) = @fechaSeleccionada;
+
+    -- Generar lista de horarios disponibles
+    DECLARE @horarioActual TIME = @horarioApertura;
+    DECLARE @listaHorarios NVARCHAR(MAX) = '';
+
+    WHILE @horarioActual < @horarioCierre
+    BEGIN
+        -- Contar cuántas citas hay a esta hora para el barbero seleccionado
+        DECLARE @citasOcupadas INT = (SELECT COUNT(DISTINCT EmpleadoId) FROM #HorariosOcupados WHERE Hora = @horarioActual);
+
+        -- Verificar si el barbero está ocupado a esta hora
+        IF NOT EXISTS (SELECT 1 FROM #HorariosOcupados WHERE Hora = @horarioActual AND EmpleadoId = @empleadoId)
+        BEGIN
+            -- Agregar hora disponible a la lista si el barbero está disponible
+            SET @listaHorarios = @listaHorarios + CAST(@horarioActual AS NVARCHAR(5)) + ', ';
+        END
+
+        -- Incrementar la hora actual por la duración de la cita
+        SET @horarioActual = DATEADD(MINUTE, @duracionMinutos, @horarioActual);
+    END
+
+    -- Eliminar la última coma y espacio
+    SET @listaHorarios = RTRIM(SUBSTRING(@listaHorarios, 1, LEN(@listaHorarios) - 2));
+
+    -- Retornar la lista de horarios disponibles
+    SET @tipoError = 0;
+    SET @mensaje = 'Horarios disponibles: ' + @listaHorarios;
+
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+    DROP TABLE #HorariosOcupados; -- Limpiar tabla temporal
+END;
+GO
+print 'Operacion correcta, sp_obtener_horarios_disponibles ejecutado.'
+GO
+-- #endregion
+-----**************************************************************
