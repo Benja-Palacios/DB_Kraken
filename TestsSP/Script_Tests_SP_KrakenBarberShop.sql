@@ -208,6 +208,25 @@ EXEC [dbo].[sp_editar_cliente]
 
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
+-----------STORE PROCEDURE DE EDITAR DATOS DEL EMPLEADO
+
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+
+EXEC [dbo].[sp_editar_empleado]
+    @clienteId = 1,                                
+    @nombre = 'Emil',                             
+    @apellidoPaterno = 'Hernandez',                
+    @apellidoMaterno = 'AvilEZ',                    
+	@correo = 'emil.hdz@gmail.com', 
+    @rolId = 3,
+	@direccionId = 1, 
+    @tipoError = @tipoError OUTPUT,                
+    @mensaje = @mensaje OUTPUT;                  
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
 -----------STORE PROCEDURE PARA CAMBIAR CONTRASENA DEL CLIENTE
 
 DECLARE @tipoError INT;
