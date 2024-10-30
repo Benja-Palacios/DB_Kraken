@@ -1606,8 +1606,6 @@ GO
 -- #endregion
 -----**************************************************************
 
-
-
 -- #region sp_obtener_horarios_disponibles
 -- ############################
 -- STORE PROCEDURE PARA OBTENER HORARIOS DISPONIBLES 
@@ -1734,8 +1732,15 @@ GO
 print 'Operacion correcta, sp_obtener_horarios_disponibles ejecutado.'
 GO
 -- #endregion
------**************************************************************
----****************************************************************
+
+-- #region sp_trabajadores_por_direccion
+-- ############################
+-- STORE PROCEDURE PARA OBTENER TRABAJADORES POR DIRECCION 
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <28 de octubre 2024>
+-- Description: <Obtiene los trabajadores por direccion>
+-- ############################
+
 CREATE OR ALTER PROCEDURE sp_trabajadores_por_direccion (
     @DireccionId INT
 )
@@ -1753,3 +1758,96 @@ BEGIN
         AND C.tiendaId IS NOT NULL  -- Asegura que tenga asignado un tiendaId
         AND C.direccionId IS NOT NULL; -- Asegura que tenga asignado un direccionId
 END;
+GO
+print 'Operacion correcta, sp_trabajadores_por_direccion ejecutado.'
+GO
+
+-- #endregion
+
+-- #region sp_editar_empleado
+-- ############################
+-- STORE PROCEDURE PARA EDITAR DATOS DEL EMPLEADO
+-- Autor: <Emil Jesus Hernandez Avila>
+-- Create Date: <14 de octubre 2024 >
+-- Description: <Permitir a los administadores editar su información personal de sus empleados>
+-- ############################
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_empleado]
+    @clienteId INT,
+    @nombre VARCHAR(50),
+    @apellidoPaterno VARCHAR(50),
+    @apellidoMaterno VARCHAR(50),
+    @correo VARCHAR(100),
+    @rolId INT,
+	@direccionId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+
+        -- Validación de nulos o vacíos
+        IF @nombre IS NULL OR LTRIM(RTRIM(@nombre)) = '' OR 
+           @apellidoPaterno IS NULL OR LTRIM(RTRIM(@apellidoPaterno)) = '' OR 
+           @apellidoMaterno IS NULL OR LTRIM(RTRIM(@apellidoMaterno)) = '' OR 
+           @correo IS NULL OR LTRIM(RTRIM(@correo)) = ''OR 
+           @rolId IS NULL OR LTRIM(RTRIM(@rolId)) = ''OR 
+           @direccionId IS NULL OR LTRIM(RTRIM(@direccionId)) = ''
+        BEGIN
+            SET @tipoError = 4;
+            SET @mensaje = 'Ninguno de los campos puede estar vacío';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Validar si el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'Cliente no encontrado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Verificar si el correo ya está en uso por otro cliente
+        IF EXISTS (SELECT 1 FROM BSK_Autenticacion WHERE correo = @correo AND clienteId != @clienteId)
+        BEGIN
+            SET @tipoError = 2;
+            SET @mensaje = 'El correo ya está en uso por otro cliente';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Actualizar datos en la tabla Cliente
+        UPDATE BSK_Cliente
+        SET nombre = @nombre,
+            apellidoPaterno = @apellidoPaterno,
+            apellidoMaterno = @apellidoMaterno,
+            rolId = @rolId,
+            direccionId= @direccionId
+        WHERE id = @clienteId;
+
+        -- Actualizar el correo en la tabla Autenticacion
+        UPDATE BSK_Autenticacion
+        SET correo = @correo
+        WHERE clienteId = @clienteId;
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Datos actualizados correctamente';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 3;
+        SET @mensaje = ERROR_MESSAGE();
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END CATCH
+END
+GO
+print 'Operación correcta, sp_editar_empleado ejecutado.';
+GO
+-- #endregion
+------*************************************************************
