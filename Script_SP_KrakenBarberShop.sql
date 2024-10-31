@@ -1630,7 +1630,6 @@ GO
 -- Create Date: <28 de octubre 2024>
 -- Description: <Obtiene los horarios disponibles>
 -- ############################
-
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_horarios_disponibles]
     @tiendaId INT,
     @direccionId INT,
@@ -1706,13 +1705,14 @@ BEGIN
         EmpleadoId INT
     );
 
-    -- Obtener las citas ya agendadas para la fecha, tienda y empleado seleccionados
+    -- Obtener las citas ya agendadas para la fecha, tienda y empleado seleccionados, excluyendo las canceladas
     INSERT INTO #HorariosOcupados (Hora, EmpleadoId)
     SELECT CAST(horaCita AS TIME), empleadoId
     FROM BSK_Citas
     WHERE tiendaId = @tiendaId
       AND direccionId = @direccionId
-      AND CAST(fechaCita AS DATE) = @fechaSeleccionada;
+      AND CAST(fechaCita AS DATE) = @fechaSeleccionada
+      AND estado != 'Cancelada'; -- Excluir las citas canceladas
 
     -- Generar lista de horarios disponibles
     DECLARE @horarioActual TIME = @horarioApertura;
