@@ -1470,7 +1470,6 @@ BEGIN
         C.estado,
 		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
         T.nombre AS Tienda,
-<<<<<<< HEAD
 		T.imagen As ImagenTienda,
         D.ubicacion AS Ubicacion,
 		D.estado AS Estado,
@@ -1480,11 +1479,6 @@ BEGIN
 		D.pais As Pais,
 		D.referencia AS Referencia,
 		D.telefono AS TelefonoTienda,
-=======
-        D.ubicacion + ' ' + D.municipio + ' ' + D.CP AS Direccion,
-		D.referencia AS Referencia,
-		D.telefono AS Telefono,
->>>>>>> 8a6bbf2caad7dde91c74f7a07d350fff6eb79072
         C.fechaCreacion
     FROM BSK_Citas C
     INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
