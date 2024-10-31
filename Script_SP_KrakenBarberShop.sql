@@ -946,10 +946,11 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_estilos_por_tienda]
 AS
 BEGIN
     SELECT 
-        E.id AS TiendaID,
+        E.id AS Id,
         E.nombre AS Nombre,
         E.imagen AS Imagen,
-        E.descripcion AS Descripcion
+        E.descripcion AS Descripcion,
+		E.tiendaId AS TiendaId
     FROM 
         BSK_EstilosTienda E
     WHERE 
@@ -977,7 +978,9 @@ BEGIN
     SELECT 
         T.id AS TiendaID,
         T.nombre AS NombreTienda,
-        T.imagen AS ImagenTienda
+        T.imagen AS ImagenTienda,
+		T.horarioApertura AS HorarioApertura,
+		T.horarioCierre AS HorarioCierre
     FROM 
         BSK_Tienda T
     WHERE 
@@ -1467,6 +1470,7 @@ BEGIN
         C.estado,
 		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
         T.nombre AS Tienda,
+<<<<<<< HEAD
 		T.imagen As ImagenTienda,
         D.ubicacion AS Ubicacion,
 		D.estado AS Estado,
@@ -1476,6 +1480,11 @@ BEGIN
 		D.pais As Pais,
 		D.referencia AS Referencia,
 		D.telefono AS TelefonoTienda,
+=======
+        D.ubicacion + ' ' + D.municipio + ' ' + D.CP AS Direccion,
+		D.referencia AS Referencia,
+		D.telefono AS Telefono,
+>>>>>>> 8a6bbf2caad7dde91c74f7a07d350fff6eb79072
         C.fechaCreacion
     FROM BSK_Citas C
     INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
