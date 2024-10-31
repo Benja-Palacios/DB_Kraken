@@ -1445,7 +1445,6 @@ print 'Operación correcta, sp_editar_cita ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
-
 -- #region sp_consultar_citas_por_usuario
 -- ############################
 -- STORE PROCEDURE PARA CONSULTAR CITAS POR CLIENTE
@@ -1464,10 +1463,19 @@ BEGIN
     SELECT 
         C.id AS CitaId,
         C.fechaCita,
+		C.horaCita,
         C.estado,
 		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
         T.nombre AS Tienda,
-        D.ubicacion AS Direccion,
+		T.imagen As ImagenTienda,
+        D.ubicacion AS Ubicacion,
+		D.estado AS Estado,
+		D.CP AS cp,
+		D.municipio AS Municipio,
+		D.noExterior AS NoExterior,
+		D.pais As Pais,
+		D.referencia AS Referencia,
+		D.telefono AS TelefonoTienda,
         C.fechaCreacion
     FROM BSK_Citas C
     INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
@@ -1480,8 +1488,8 @@ END;
 print 'Operación correcta, sp_consultar_citas_por_usuario ejecutado.';
 GO
 -- #endregion
-------*************************************************************
 
+------*************************************************************
 -- #region sp_consultar_citas_por_tienda
 -- ############################
 -- STORE PROCEDURE PARA CONSULTAR CITAS AGENDADAS POR TIENDA
@@ -1500,12 +1508,21 @@ BEGIN
     SELECT 
         C.id AS CitaId,
         C.fechaCita,
+		C.horaCita,
         C.estado,
         Cl.nombre + ' ' + Cl.apellidoPaterno AS Cliente,
-        D.ubicacion AS Direccion,
+		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
+        D.ubicacion AS Ubicacion,
+		D.estado AS Estado,
+		D.CP AS cp,
+		D.municipio AS Municipio,
+		D.noExterior AS NoExterior,
+		D.pais As Pais,
+		D.referencia AS Referencia,
         C.fechaCreacion
     FROM BSK_Citas C
     INNER JOIN BSK_Cliente Cl ON C.clienteId = Cl.id
+	INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
     INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
     WHERE C.tiendaId = @tiendaId
     ORDER BY C.fechaCita DESC;
