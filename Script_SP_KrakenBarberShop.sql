@@ -1512,7 +1512,7 @@ BEGIN
         C.id AS CitaId,
         C.fechaCita,
 		C.horaCita,
-        C.estado,
+        C.estado AS StatusCita,
         Cl.nombre + ' ' + Cl.apellidoPaterno AS Cliente,
 		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
         D.ubicacion AS Ubicacion,
