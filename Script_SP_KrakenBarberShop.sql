@@ -1456,36 +1456,47 @@ GO
 -- Description: <Consultar todas las citas de un cliente específico>
 -- ############################
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
-    @clienteId INT
+CREATE OR ALTER  PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
+    @clienteId INT,
+    @pageNumber INT,
+    @pageSize INT,
+    @totalRecords INT OUTPUT -- Agregar parámetro de salida
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    -- Seleccionar todas las citas del cliente
-    SELECT 
-        C.id AS CitaId,
-        C.fechaCita,
-		C.horaCita,
-        C.estado,
-		E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
-        T.nombre AS Tienda,
-		T.imagen As ImagenTienda,
-        D.ubicacion AS Ubicacion,
-		D.estado AS Estado,
-		D.CP AS cp,
-		D.municipio AS Municipio,
-		D.noExterior AS NoExterior,
-		D.pais As Pais,
-		D.referencia AS Referencia,
-		D.telefono AS TelefonoTienda,
-        C.fechaCreacion
+    -- Contar el total de registros
+    SELECT @totalRecords = COUNT(*) 
     FROM BSK_Citas C
-    INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
-    INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
-	INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
-    WHERE C.clienteId = @clienteId
-    ORDER BY C.fechaCita DESC;
+    WHERE C.clienteId = @clienteId;
+    -- Obtener las citas paginadas
+    SELECT *
+    FROM (
+        SELECT 
+            C.id AS CitaId,
+            C.fechaCita,
+            C.horaCita,
+            C.estado AS StatusCita,
+            E.nombre + ' ' + E.apellidoPaterno + ' ' + E.apellidoMaterno AS Empleado,
+            T.nombre AS Tienda,
+            T.imagen AS ImagenTienda,
+            D.ubicacion AS Ubicacion,
+            D.estado AS Estado,
+            D.CP AS cp,
+            D.municipio AS Municipio,
+            D.noExterior AS NoExterior,
+            D.pais AS Pais,
+            D.referencia AS Referencia,
+            D.telefono AS TelefonoTienda,
+            C.fechaCreacion,
+            ROW_NUMBER() OVER (ORDER BY C.fechaCita DESC) AS RowNum
+        FROM BSK_Citas C
+        INNER JOIN BSK_Tienda T ON C.tiendaId = T.id
+        INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
+        INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
+        WHERE C.clienteId = @clienteId
+    ) AS Result
+    WHERE RowNum BETWEEN ((@pageNumber - 1) * @pageSize + 1) AND (@pageNumber * @pageSize);
+
 END;
 
 print 'Operación correcta, sp_consultar_citas_por_usuario ejecutado.';
