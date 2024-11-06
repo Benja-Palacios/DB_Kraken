@@ -1473,6 +1473,9 @@ BEGIN
     FROM (
         SELECT 
             C.id AS CitaId,
+            C.direccionId AS DireccionId,
+			C.tiendaId AS TiendaID,
+			c.empleadoId AS EmpleadoID,
             C.fechaCita,
             C.horaCita,
             C.estado AS StatusCita,
