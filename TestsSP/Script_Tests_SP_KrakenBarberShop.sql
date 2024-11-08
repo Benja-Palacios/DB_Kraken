@@ -202,7 +202,8 @@ EXEC [dbo].[sp_editar_cliente]
     @nombre = 'Emil',                             
     @apellidoPaterno = 'Hernandez',                
     @apellidoMaterno = 'Avila',                    
-	@correo = 'emil.hdz@gmail.com',  
+	@correo = 'emil.hdz@gmail.com', 
+    @estado = 'Inactivo', 
     @tipoError = @tipoError OUTPUT,                
     @mensaje = @mensaje OUTPUT;                  
 
@@ -220,6 +221,7 @@ EXEC [dbo].[sp_editar_empleado]
     @apellidoPaterno = 'Hernandez',                
     @apellidoMaterno = 'AvilEZ',                    
 	@correo = 'emil.hdz@gmail.com', 
+    @estado = 'Inactivo',
     @rolId = 3,
 	@direccionId = 1, 
     @tipoError = @tipoError OUTPUT,                

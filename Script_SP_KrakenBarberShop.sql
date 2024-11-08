@@ -115,12 +115,23 @@ BEGIN
         END
 
         DECLARE @contrasena_bd VARCHAR(64);
-        DECLARE @clienteId INT;             
+        DECLARE @clienteId INT; 
+        DECLARE @estado VARCHAR(10);            
 
-        -- Verificar si el correo existe y obtener la contrase�a y el ID del cliente
-        SELECT @contrasena_bd = contrasena, @clienteId = clienteId
-        FROM BSK_Autenticacion 
+         -- Verificar si el correo existe y obtener la contraseña, el ID y el estado del cliente
+        SELECT @contrasena_bd = contrasena, @clienteId = clienteId, @estado = estado
+        FROM BSK_Autenticacion AS a
+        JOIN BSK_Cliente AS c ON a.clienteId = c.id
         WHERE correo = @correo;
+
+                -- Validar si el cliente está inactivo
+        IF @estado = 'inactivo'
+        BEGIN
+            SET @tipoError = 5;
+            SET @mensaje = 'Usuario inactivo, no puedes iniciar sesión';
+            SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
 
         -- Comparar la contrase�a y manejar los errores
         IF @contrasena_bd IS NULL
@@ -175,6 +186,7 @@ END
 GO
 print 'Operacion correcta, sp_iniciar_sesion ejecutado.'
 GO
+
 -- #endregion
 ------*************************************************************
 -- #region sp_agregar_tienda
@@ -1005,6 +1017,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cliente]
     @apellidoPaterno VARCHAR(50),
     @apellidoMaterno VARCHAR(50),
     @correo VARCHAR(100),
+    @estado VARCHAR(10), -- Nuevo parámetro para el estado
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -1015,12 +1028,16 @@ BEGIN
     SET @mensaje = '';
 
     BEGIN TRY
+    
+    -- Convertir `estado` a minúsculas para evitar inconsistencias
+    SET @estado = LOWER(@estado);
 
         -- Validación de nulos o vacíos
         IF @nombre IS NULL OR LTRIM(RTRIM(@nombre)) = '' OR 
            @apellidoPaterno IS NULL OR LTRIM(RTRIM(@apellidoPaterno)) = '' OR 
            @apellidoMaterno IS NULL OR LTRIM(RTRIM(@apellidoMaterno)) = '' OR 
-           @correo IS NULL OR LTRIM(RTRIM(@correo)) = ''
+           @correo IS NULL OR LTRIM(RTRIM(@correo)) = '' OR 
+           @estado IS NULL OR LTRIM(RTRIM(@estado)) = '' 
         BEGIN
             SET @tipoError = 4;
             SET @mensaje = 'Ninguno de los campos puede estar vacío';
@@ -1050,7 +1067,8 @@ BEGIN
         UPDATE BSK_Cliente
         SET nombre = @nombre,
             apellidoPaterno = @apellidoPaterno,
-            apellidoMaterno = @apellidoMaterno
+            apellidoMaterno = @apellidoMaterno,
+            estado = @estado 
         WHERE id = @clienteId;
 
         -- Actualizar el correo en la tabla Autenticacion
@@ -1415,6 +1433,9 @@ BEGIN
         RETURN;
     END
 
+ -- Convertir `estado` a minúsculas para evitar inconsistencias
+       SET @nuevoEstado = LOWER(@nuevoEstado);
+
      -- Validación de nulos o vacíos
      IF @nuevaFechaCita IS NULL OR LTRIM(RTRIM(@nuevaFechaCita)) = '' OR 
            @nuevoEstado IS NULL OR LTRIM(RTRIM(@nuevoEstado)) = '' OR 
@@ -1670,6 +1691,15 @@ BEGIN
         RETURN;
     END
 
+	    -- Validación de que la fecha seleccionada no sea anterior a la fecha actual
+    IF @fechaSeleccionada < CAST(GETDATE() AS DATE)
+    BEGIN
+        SET @tipoError = 6;
+        SET @mensaje = 'No es posible seleccionar una fecha anterior a la fecha actual.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+
     -- Validación de existencia de la tienda
     IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @tiendaId)
     BEGIN
@@ -1727,14 +1757,22 @@ BEGIN
     WHERE tiendaId = @tiendaId
       AND direccionId = @direccionId
       AND CAST(fechaCita AS DATE) = @fechaSeleccionada
-      AND estado != 'Cancelada'; -- Excluir las citas canceladas
+      AND estado != 'cancelada'; -- Excluir las citas canceladas
 
     -- Generar lista de horarios disponibles
     DECLARE @horarioActual TIME = @horarioApertura;
     DECLARE @listaHorarios NVARCHAR(MAX) = '';
+    DECLARE @horaActual TIME = CAST(GETDATE() AS TIME);
 
     WHILE @horarioActual < @horarioCierre
     BEGIN
+        -- Omitir horarios anteriores a la hora actual si la fecha seleccionada es hoy
+        IF @fechaSeleccionada = CAST(GETDATE() AS DATE) AND @horarioActual < @horaActual
+        BEGIN
+            SET @horarioActual = DATEADD(MINUTE, @duracionMinutos, @horarioActual);
+            CONTINUE;
+        END
+
         -- Contar cuántas citas hay a esta hora para el barbero seleccionado
         DECLARE @citasOcupadas INT = (SELECT COUNT(DISTINCT EmpleadoId) FROM #HorariosOcupados WHERE Hora = @horarioActual);
 
@@ -1810,7 +1848,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_empleado]
     @apellidoMaterno VARCHAR(50),
     @correo VARCHAR(100),
     @rolId INT,
-	@direccionId INT,
+    @direccionId INT,
+    @estado VARCHAR(10), -- solo se puede editar a "Inactivo"
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -1822,13 +1861,16 @@ BEGIN
 
     BEGIN TRY
 
+    -- Convertir `estado` a minúsculas para evitar inconsistencias
+       SET @estado = LOWER(@estado);
         -- Validación de nulos o vacíos
         IF @nombre IS NULL OR LTRIM(RTRIM(@nombre)) = '' OR 
            @apellidoPaterno IS NULL OR LTRIM(RTRIM(@apellidoPaterno)) = '' OR 
            @apellidoMaterno IS NULL OR LTRIM(RTRIM(@apellidoMaterno)) = '' OR 
-           @correo IS NULL OR LTRIM(RTRIM(@correo)) = ''OR 
-           @rolId IS NULL OR LTRIM(RTRIM(@rolId)) = ''OR 
-           @direccionId IS NULL OR LTRIM(RTRIM(@direccionId)) = ''
+           @correo IS NULL OR LTRIM(RTRIM(@correo)) = '' OR 
+           @rolId IS NULL OR LTRIM(RTRIM(@rolId)) = '' OR 
+           @direccionId IS NULL OR LTRIM(RTRIM(@direccionId)) = '' OR 
+           @estado IS NULL OR LTRIM(RTRIM(@estado)) = '' 
         BEGIN
             SET @tipoError = 4;
             SET @mensaje = 'Ninguno de los campos puede estar vacío';
@@ -1860,7 +1902,8 @@ BEGIN
             apellidoPaterno = @apellidoPaterno,
             apellidoMaterno = @apellidoMaterno,
             rolId = @rolId,
-            direccionId= @direccionId
+            direccionId = @direccionId,
+            estado = @estado 
         WHERE id = @clienteId;
 
         -- Actualizar el correo en la tabla Autenticacion
