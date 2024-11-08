@@ -297,5 +297,29 @@ EXEC [dbo].[sp_obtener_horarios_disponibles]
 
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
+-----------STORE PROCEDURE PARA AGREGAR FAVORITOS
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
 
+EXEC [dbo].[sp_agregar_tienda_favorita]
+    @clienteId = 1, 
+	@tiendaId = 1,
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
 
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+-----------STORE PROCEDURE PARA ELIMINAR FAVORITOS
+
+-- Declaración de variables de salida para capturar los mensajes y tipo de error
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+-- Ejecución del procedimiento almacenado
+EXEC [dbo].[sp_eliminar_tienda_favorita] 
+    @favoritoId = 1, -- ID del favorito a eliminar
+    @tipoError = @tipoError OUTPUT,
+    @mensaje = @mensaje OUTPUT;
+
+-- Ver el resultado del mensaje
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;

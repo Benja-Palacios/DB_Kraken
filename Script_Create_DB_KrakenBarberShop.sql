@@ -114,10 +114,24 @@ CREATE TABLE BSK_Citas (
     FOREIGN KEY (empleadoId) REFERENCES BSK_Cliente(id)
 );
 
+-- Tabla de Favoritos (Tiendas favoritas de los clientes)
+CREATE TABLE BSK_FavoritosTienda (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    clienteId INT NOT NULL,
+    tiendaId INT NOT NULL,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id),
+    FOREIGN KEY (tiendaId) REFERENCES BSK_Tienda(id),
+    CONSTRAINT UC_BSK_FavoritosTienda UNIQUE (clienteId, tiendaId) -- Evita duplicados en favoritos
+);
+
+
 -- Crear índices para mejorar el rendimiento en consultas
 CREATE INDEX IX_BSK_Citas_FechaCita ON BSK_Citas(fechaCita);
 CREATE INDEX IX_BSK_Citas_ClienteId ON BSK_Citas(clienteId);
 CREATE INDEX IX_BSK_Citas_TiendaId ON BSK_Citas(tiendaId);
+CREATE INDEX IX_BSK_FavoritosTienda_ClienteId ON BSK_FavoritosTienda(clienteId);
+CREATE INDEX IX_BSK_FavoritosTienda_TiendaId ON BSK_FavoritosTienda(tiendaId);
 
 -- ############################
 -- Añadir claves foráneas tras la creación de las tablas

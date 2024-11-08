@@ -1392,7 +1392,7 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_cita]
     @citaId INT,
 	@nuevoempleadoId INT,
-    @nuevaFechaCita DATETIME,
+    @nuevaFechaCita VARCHAR(20),
 	@nuevahoraCita TIME,
     @nuevoEstado VARCHAR(50),
     @nuevaDireccionId INT,
@@ -1447,6 +1447,7 @@ END;
 print 'Operación correcta, sp_editar_cita ejecutado.';
 GO
 -- #endregion
+
 ------*************************************************************
 -- #region sp_consultar_citas_por_usuario
 -- ############################
@@ -1799,7 +1800,7 @@ GO
 -- ############################
 -- STORE PROCEDURE PARA EDITAR DATOS DEL EMPLEADO
 -- Autor: <Emil Jesus Hernandez Avila>
--- Create Date: <14 de octubre 2024 >
+-- Create Date: <28 de octubre 2024 >
 -- Description: <Permitir a los administadores editar su información personal de sus empleados>
 -- ############################
 CREATE OR ALTER PROCEDURE [dbo].[sp_editar_empleado]
@@ -1879,6 +1880,159 @@ BEGIN
 END
 GO
 print 'Operación correcta, sp_editar_empleado ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_agregar_tienda_favorita
+-- ############################
+-- STORE PROCEDURE PARA AGREGAR TIENDA A FAVORITOS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <7 de noviembre 2024>
+-- Description: <Agregar tienda a favoritos de un cliente específico>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_agregar_tienda_favorita]
+    @clienteId INT,
+    @tiendaId INT,
+	@tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+	  -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si la tienda ya está en favoritos
+    IF EXISTS (
+        SELECT 1
+        FROM BSK_FavoritosTienda
+        WHERE clienteId = @clienteId AND tiendaId = @tiendaId
+    )
+    BEGIN
+        SET @tipoError = 1;
+        SET @mensaje = 'La tienda ya está en tu lista de favoritos';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        RETURN;
+    END
+ 
+        -- Agregar la tienda a favoritos
+        INSERT INTO BSK_FavoritosTienda (clienteId, tiendaId, fechaCreacion)
+        VALUES (@clienteId, @tiendaId, GETDATE());
+
+		 SET @tipoError = 0;
+         SET @mensaje = 'La tienda se ha agregado a favoritos exitosamente.';
+         SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+END;
+GO
+
+print 'Operación correcta, sp_agregar_tienda_favorita ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_consultar_tiendas_favoritas_por_cliente
+-- ############################
+-- STORE PROCEDURE PARA CONSULTAR TIENDAS FAVORITAS POR CLIENTE
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <7 de noviembre 2024>
+-- Description: <Consultar todas las tiendas favoritas de un cliente específico>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_tiendas_favoritas_por_cliente]
+    @clienteId INT,
+    @pageNumber INT,
+    @pageSize INT,
+    @totalRecords INT OUTPUT 
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Contar el total de registros
+    SELECT @totalRecords = COUNT(*)
+    FROM BSK_FavoritosTienda F
+    WHERE F.clienteId = @clienteId;
+
+    -- Obtener las tiendas favoritas paginadas
+    SELECT *
+    FROM (
+        SELECT 
+            F.id AS FavoritoId,
+            F.tiendaId AS TiendaId,
+            T.nombre AS NombreTienda,
+            T.imagen AS ImagenTienda,
+            T.horarioApertura AS Apertura,
+            T.horarioCierre AS Cierre,
+            D.ubicacion AS Ubicacion,
+            D.estado AS Estado,
+            D.CP AS CodigoPostal,
+            D.municipio AS Municipio,
+            D.noExterior AS NoExterior,
+            D.pais AS Pais,
+            D.referencia AS Referencia,
+            D.telefono AS TelefonoTienda,
+            F.fechaCreacion,
+            ROW_NUMBER() OVER (ORDER BY F.fechaCreacion DESC) AS RowNum
+        FROM BSK_FavoritosTienda F
+        INNER JOIN BSK_Tienda T ON F.tiendaId = T.id
+        INNER JOIN BSK_DireccionTienda D ON T.id = D.tiendaId 
+        WHERE F.clienteId = @clienteId
+    ) AS Result
+    WHERE RowNum BETWEEN ((@pageNumber - 1) * @pageSize + 1) AND (@pageNumber * @pageSize);
+END;
+GO 
+
+PRINT 'Operación correcta, sp_consultar_tiendas_favoritas_por_cliente ejecutado.';
+GO
+-- #endregion
+
+------*************************************************************
+
+-- #region sp_eliminar_tienda_favorita
+-- ############################
+-- STORE PROCEDURE PARA ELIMINAR TIENDA DE FAVORITOS
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <7 de noviembre 2024>
+-- Description: <Eliminar una tienda específica de la lista de favoritos de un cliente>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_tienda_favorita]
+    @favoritoId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Inicializar variables de salida
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    -- Verificar si el favorito existe
+    IF EXISTS (
+        SELECT 1 
+        FROM BSK_FavoritosTienda
+        WHERE id = @favoritoId
+    )
+    BEGIN
+        -- Eliminar la tienda de favoritos
+        DELETE FROM BSK_FavoritosTienda
+        WHERE id = @favoritoId;
+
+        SET @tipoError = 1; 
+        SET @mensaje = 'Tienda eliminada correctamente de favoritos';
+
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+    ELSE
+    BEGIN
+        SET @tipoError = 2; 
+        SET @mensaje = 'El favorito no existe en la lista de este cliente.';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END
+END;
+GO
+PRINT 'Operación correcta, sp_eliminar_tienda_favorita ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
