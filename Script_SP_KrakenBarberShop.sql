@@ -129,7 +129,7 @@ BEGIN
         BEGIN
             SET @tipoError = 5;
             SET @mensaje = 'Usuario inactivo, no puedes iniciar sesión';
-            SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
+            SELECT 0 AS Id, NULL AS Nombre, NULL AS ApellidoPaterno, NULL AS ApellidoMaterno, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
         END
 
@@ -138,7 +138,7 @@ BEGIN
         BEGIN
             SET @tipoError = 1; 
             SET @mensaje = 'El correo no est� registrado';
-			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
+			SELECT 0 AS Id, NULL AS Nombre, NULL AS ApellidoPaterno, NULL AS ApellidoMaterno, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
             RETURN;
         END
 
@@ -147,7 +147,7 @@ BEGIN
         BEGIN
             SET @tipoError = 2; 
             SET @mensaje = 'Contrase�a incorrecta';
-			SELECT 0 AS Id, NULL AS Nombre, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
+			SELECT 0 AS Id, NULL AS Nombre, NULL AS ApellidoPaterno, NULL AS ApellidoMaterno, 0 AS RolId, @tipoError AS tipoError, @mensaje AS mensaje, @correo AS correo, @contrasena AS contrasena;
             RETURN;
         END
 
@@ -158,6 +158,8 @@ BEGIN
         SELECT
 			[id] = id,
             [nombre] = nombre,
+			[apellidoPaterno] = apellidoPaterno, 
+			[apellidoMaterno] = apellidoMaterno,
             [rolId] = rolId,
 			@tipoError AS tipoError,
 			@mensaje AS mensaje, 
@@ -174,7 +176,9 @@ BEGIN
 
 		SELECT 
 			0 AS Id, 
-			NULL AS Nombre, 
+			NULL AS Nombre,
+            NULL AS ApellidoPaterno,
+			NULL AS ApellidoMaterno, 
 			0 AS RolId, 
             @tipoError AS tipoError, 
             @mensaje AS mensaje, 
@@ -400,6 +404,19 @@ BEGIN
             SET @mensaje = 'La tienda que desea eliminar no existe';
             SELECT @tipoError AS tipoError, @mensaje AS mensaje;
             RETURN;
+        END
+
+        -- Eliminar las calificaciones asociadas a la tienda
+		IF EXISTS (SELECT 1 FROM BSK_CalificacionTienda WHERE tiendaId = @TiendaId)
+        BEGIN
+            -- Eliminar las calificaciones asociadas a la tienda
+            DELETE FROM BSK_CalificacionTienda WHERE tiendaId = @TiendaId;
+        END
+
+        -- Eliminar las citas asociadas a las direcciones de la tienda
+        IF EXISTS (SELECT 1 FROM BSK_Citas WHERE direccionId IN (SELECT id FROM BSK_DireccionTienda WHERE tiendaId = @TiendaId))
+        BEGIN
+            DELETE FROM BSK_Citas WHERE direccionId IN (SELECT id FROM BSK_DireccionTienda WHERE tiendaId = @TiendaId);
         END
 
         -- Eliminar las direcciones asociadas a la tienda
