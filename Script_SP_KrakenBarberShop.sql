@@ -2096,5 +2096,36 @@ END;
 GO
 PRINT 'Operación correcta, sp_eliminar_tienda_favorita ejecutado.';
 GO
+
+-- #endregion
+------*************************************************************
+-- #region sp_obtener_calificacion_tienda
+-- ############################
+-- STORE PROCEDURE DE OBTENER TIENDAS Calificadas
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Data: <14 de octubre 2024>
+-- Description: <Obtener las tiendas Calificadas>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_calificacion_tienda]
+    @TiendaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        tiendaId, 
+        CAST(ROUND(AVG(CAST(calificacion AS DECIMAL(3, 2))), 2) AS DECIMAL(4, 2)) AS calificacionPromedio,
+        COUNT(calificacion) AS totalCalificaciones
+    FROM 
+        BSK_CalificacionTienda
+    WHERE 
+        tiendaId = @TiendaId
+    GROUP BY 
+        tiendaId;
+END;
+
+print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
+GO
 -- #endregion
 ------*************************************************************
