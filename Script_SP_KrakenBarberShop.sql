@@ -948,7 +948,9 @@ BEGIN
     SELECT 
         T.id AS TiendaID,                
         T.nombre AS NombreTienda,         
-        T.imagen AS ImagenTienda               
+        T.imagen AS ImagenTienda,
+        T.horarioApertura AS HorarioApertura,
+        T.horarioCierre AS HorarioCierre               
     FROM 
         BSK_Tienda T
     INNER JOIN 
