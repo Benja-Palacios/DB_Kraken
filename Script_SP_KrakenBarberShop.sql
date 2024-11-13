@@ -1497,26 +1497,30 @@ GO
 -- Description: <Consultar todas las citas de un cliente específico>
 -- ############################
 
-CREATE OR ALTER  PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
+CREATE OR ALTER PROCEDURE [dbo].[sp_consultar_citas_por_usuario]
     @clienteId INT,
     @pageNumber INT,
     @pageSize INT,
-    @totalRecords INT OUTPUT -- Agregar parámetro de salida
+    @totalRecords INT OUTPUT,
+    @fechaInicio DATE, -- Parámetro opcional para fecha de inicio
+    @fechaFin DATE     -- Parámetro opcional para fecha de fin
 AS
 BEGIN
     SET NOCOUNT ON;
-    -- Contar el total de registros
-    SELECT @totalRecords = COUNT(*) 
+
+    SELECT @totalRecords = COUNT(*)
     FROM BSK_Citas C
-    WHERE C.clienteId = @clienteId;
-    -- Obtener las citas paginadas
+    WHERE C.clienteId = @clienteId
+    AND (@fechaInicio IS NULL OR C.fechaCita >= @fechaInicio)
+    AND (@fechaFin IS NULL OR C.fechaCita <= @fechaFin);
+
     SELECT *
     FROM (
         SELECT 
             C.id AS CitaId,
             C.direccionId AS DireccionId,
-			C.tiendaId AS TiendaID,
-			c.empleadoId AS EmpleadoID,
+            C.tiendaId AS TiendaID,
+            C.empleadoId AS EmpleadoID,
             C.fechaCita,
             C.horaCita,
             C.estado AS StatusCita,
@@ -1538,6 +1542,8 @@ BEGIN
         INNER JOIN BSK_DireccionTienda D ON C.direccionId = D.id
         INNER JOIN BSK_Cliente E ON C.empleadoId = E.id
         WHERE C.clienteId = @clienteId
+        AND (@fechaInicio IS NULL OR C.fechaCita >= @fechaInicio)
+        AND (@fechaFin IS NULL OR C.fechaCita <= @fechaFin)
     ) AS Result
     WHERE RowNum BETWEEN ((@pageNumber - 1) * @pageSize + 1) AND (@pageNumber * @pageSize);
 
