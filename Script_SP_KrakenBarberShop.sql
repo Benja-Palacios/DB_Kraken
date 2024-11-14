@@ -2107,9 +2107,9 @@ GO
 ------*************************************************************
 -- #region sp_obtener_calificacion_tienda
 -- ############################
--- STORE PROCEDURE DE OBTENER TIENDAS Calificadas
+-- STORE PROCEDURE DE OBTENER TIENDAS CALIFICADAS
 -- Autor: <Emil Jesus Hernandez Avilez>
--- Create Data: <14 de octubre 2024>
+-- Create Date: <7 de noviembre 2024>
 -- Description: <Obtener las tiendas Calificadas>
 -- ############################
 
@@ -2130,14 +2130,19 @@ BEGIN
     GROUP BY 
         tiendaId;
 END;
-
+GO
 print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
 
-
--- Nuevos SP
+-- #region sp_Insert_password_reset_token
+-- ############################
+-- STORE PROCEDURE DE GENERACION DE TOKEN PARA RECUPERAR LA CONTRAEENA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <11 de noviembre 2024>
+-- Description: <Inserta el token para recuperar la contrasena>
+-- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_Insert_password_reset_token]
     @clienteId INT,
@@ -2156,19 +2161,30 @@ BEGIN
         INSERT INTO BSK_PasswordResetTokens (clienteId, token, expiration, fechaCreacion)
         VALUES (@clienteId, @token, @expiration, GETDATE());
 
-        SET @tipoError = 0;  -- 0 indica operación correcta
+        SET @tipoError = 0;  
         SET @mensaje = 'Operación correcta';
     END TRY
     BEGIN CATCH
-        SET @tipoError = 1;  -- 1 indica error
+        SET @tipoError = 1;  
         SET @mensaje = ERROR_MESSAGE();
     END CATCH;
 
     SELECT @tipoError as tipoError, @mensaje as mensaje;
 END;
-
-
+GO
+print 'Operación correcta, sp_Insert_password_reset_token ejecutado.';
+GO
+-- #endregion
 ------*************************************************************
+
+-- #region sp_obtener_datos_por_correo
+-- ############################
+-- STORE PROCEDURE DE OBTENER DATOS DEL CLIENTE POR CORREO
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <11 de noviembre 2024>
+-- Description: <Obtener datos del cliente por correo>
+-- ############################
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_datos_por_correo]
     @correo NVARCHAR(255)
 AS
@@ -2187,10 +2203,20 @@ BEGIN
         SELECT 0 AS Id, NULL AS Correo, Null AS Contrasena, 0 ClienteId;
     END
 END;
+GO
 print 'Operación correcta, sp_obtener_datos_por_correo.';
 GO
-
+-- #endregion
 ------*************************************************************
+
+-- #region sp_obtener_datos_por_token
+-- ############################
+-- STORE PROCEDURE DE OBTENER DATOS DEL CLIENTE POR TOKEN
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <11 de noviembre 2024>
+-- Description: <Obtiene los datos del cliente por un token valido>
+-- ############################
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_datos_por_token]
     @Token NVARCHAR(50),
     @tipoError INT OUTPUT,
@@ -2231,5 +2257,66 @@ BEGIN
         END
     END
 END;
+GO
 print 'Operación correcta, sp_obtener_datos_por_token.';
 GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_actualizar_contrasena_sin_actual
+-- ############################
+-- STORE PROCEDURE DE ACTUALIZAR LA CONTRASENA
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <11 de noviembre 2024>
+-- Description: <Actualiza la contrasena si al usuario se le olvido>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_actualizar_contrasena_sin_actual]
+    @correo VARCHAR(100),
+    @nuevaContrasena VARCHAR(255),
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        -- Validar si el correo existe y obtener el clienteId
+        DECLARE @clienteId INT;
+
+        SELECT @clienteId = clienteId
+        FROM BSK_Autenticacion
+        WHERE correo = @correo;
+
+        IF @clienteId IS NULL
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'El correo no está registrado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+            RETURN;
+        END
+
+        -- Actualizar la contraseña (almacenar como hash)
+        UPDATE BSK_Autenticacion
+        SET contrasena = HASHBYTES('SHA2_256', @nuevaContrasena)
+        WHERE clienteId = @clienteId;
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Contraseña actualizada correctamente';
+
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 3;
+        SET @mensaje = ERROR_MESSAGE();
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+    END CATCH
+END
+GO
+print 'Operación correcta, sp_actualizar_contrasena_sin_actual.';
+GO
+-- #endregion
+------*************************************************************

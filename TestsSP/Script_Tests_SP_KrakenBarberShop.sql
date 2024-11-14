@@ -325,3 +325,55 @@ EXEC [dbo].[sp_eliminar_tienda_favorita]
 
 -- Ver el resultado del mensaje
 SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
+
+
+-----------STORE PROCEDURE PARA INSERTAR UN NUEVO TOKEN DE RESTABLECIMIENTO DE CONTRASENA 
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+DECLARE @token UNIQUEIDENTIFIER = NEWID();
+DECLARE @expiration DATETIME = DATEADD(HOUR, 1, GETUTCDATE()); -- Expiración en 1 hora UTC
+
+EXEC sp_Insert_password_reset_token 
+    @clienteId = 1, 
+    @token = @token, 
+    @expiration = @expiration, 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+
+-----------STORE PROCEDURE PARA CONSULTAR LOS DATOS DEL USUARIO POR CORREO 
+
+DECLARE @correo NVARCHAR(255) = 'emil.hdz@gmail.com';
+
+EXEC sp_obtener_datos_por_correo 
+    @correo = @correo;
+
+-----------STORE PROCEDURE PARA CONSULTAR LOS DATOS DEL USUARIO POR TOKEN 
+
+DECLARE @Token UNIQUEIDENTIFIER = '432688d6-d4cc-4620-8acc-2cf42f251c88';
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC sp_obtener_datos_por_token 
+    @Token = @Token, 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+-----------STORE PROCEDURE PARA ACTUALIZAR LA CONTRASENA DEL USUARIO  
+
+DECLARE @correo VARCHAR(100) = 'emil.hdz@gmail.com';
+DECLARE @nuevaContrasena VARCHAR(255) = 'Emil-1234';
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC sp_actualizar_contrasena_sin_actual 
+    @correo = @correo, 
+    @nuevaContrasena = @nuevaContrasena, 
+    @tipoError = @tipoError OUTPUT, 
+    @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS tipoError, @mensaje AS mensaje;
