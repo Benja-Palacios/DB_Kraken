@@ -2216,7 +2216,6 @@ GO
 -- Create Date: <11 de noviembre 2024>
 -- Description: <Obtiene los datos del cliente por un token valido>
 -- ############################
-
 CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_datos_por_token]
     @Token NVARCHAR(50),
     @tipoError INT OUTPUT,
@@ -2225,21 +2224,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM BSK_PasswordResetTokens WHERE token = @Token AND expiration > GETUTCDATE())
+    IF EXISTS (SELECT 1 FROM BSK_PasswordResetTokens WHERE token = @Token AND expiration > GETDATE())
     BEGIN
-        SELECT 
-            clienteId,
-            token,
-            expiration
-        FROM 
-            BSK_PasswordResetTokens
-        WHERE 
-            token = @Token;
-
         SET @tipoError = 0;
         SET @mensaje = 'Token vigente';
-        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
-
     END
     ELSE
     BEGIN
@@ -2248,17 +2236,17 @@ BEGIN
         IF EXISTS (SELECT 1 FROM BSK_PasswordResetTokens WHERE token = @Token)
         BEGIN
             SET @mensaje = 'Token expirado';
-            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
         END
         ELSE
         BEGIN
             SET @mensaje = 'Token no encontrado';
-            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
         END
     END
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 END;
 GO
-print 'Operación correcta, sp_obtener_datos_por_token.';
+PRINT 'Operación correcta, sp_obtener_datos_por_token.';
 GO
 -- #endregion
 ------*************************************************************
