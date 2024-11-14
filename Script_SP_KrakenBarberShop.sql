@@ -2135,3 +2135,101 @@ print 'Operación correcta, sp_obtener_calificacion_tienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+
+
+-- Nuevos SP
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_Insert_password_reset_token]
+    @clienteId INT,
+    @token UNIQUEIDENTIFIER,
+    @expiration DATETIME,                         
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        INSERT INTO BSK_PasswordResetTokens (clienteId, token, expiration, fechaCreacion)
+        VALUES (@clienteId, @token, @expiration, GETDATE());
+
+        SET @tipoError = 0;  -- 0 indica operación correcta
+        SET @mensaje = 'Operación correcta';
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 1;  -- 1 indica error
+        SET @mensaje = ERROR_MESSAGE();
+    END CATCH;
+
+    SELECT @tipoError as tipoError, @mensaje as mensaje;
+END;
+
+
+------*************************************************************
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_datos_por_correo]
+    @correo NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM BSK_Autenticacion WHERE correo = @correo)
+    BEGIN
+        -- Si existe, retorna todos los datos de esa fila
+        SELECT *
+        FROM BSK_Autenticacion
+        WHERE correo = @correo;
+    END
+    ELSE
+    BEGIN
+        SELECT 0 AS Id, NULL AS Correo, Null AS Contrasena, 0 ClienteId;
+    END
+END;
+print 'Operación correcta, sp_obtener_datos_por_correo.';
+GO
+
+------*************************************************************
+CREATE OR ALTER PROCEDURE [dbo].[sp_obtener_datos_por_token]
+    @Token NVARCHAR(50),
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM BSK_PasswordResetTokens WHERE token = @Token AND expiration > GETUTCDATE())
+    BEGIN
+        SELECT 
+            clienteId,
+            token,
+            expiration
+        FROM 
+            BSK_PasswordResetTokens
+        WHERE 
+            token = @Token;
+
+        SET @tipoError = 0;
+        SET @mensaje = 'Token vigente';
+        SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+
+    END
+    ELSE
+    BEGIN
+        SET @tipoError = 1;
+
+        IF EXISTS (SELECT 1 FROM BSK_PasswordResetTokens WHERE token = @Token)
+        BEGIN
+            SET @mensaje = 'Token expirado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        END
+        ELSE
+        BEGIN
+            SET @mensaje = 'Token no encontrado';
+            SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        END
+    END
+END;
+print 'Operación correcta, sp_obtener_datos_por_token.';
+GO

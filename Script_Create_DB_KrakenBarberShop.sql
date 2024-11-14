@@ -132,7 +132,7 @@ CREATE TABLE BSK_PasswordResetTokens (
     token UNIQUEIDENTIFIER NOT NULL,           -- Token único generado para el restablecimiento
     expiration DATETIME NOT NULL,              -- Fecha de expiración del token
     fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
-    FOREIGN KEY (clienteId) REFERENCES BSK_Cliente(id) 
+    FOREIGN KEY (clienteId) REFERENCES BSK_Autenticacion(id) 
 );
 
 -- Crear índices para mejorar el rendimiento en consultas
