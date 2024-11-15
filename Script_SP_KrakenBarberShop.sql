@@ -2364,16 +2364,16 @@ GO
 -- #endregion
 ------*************************************************************
 
--- #region sp_ContarCitasPorEstadoCliente
+-- #region sp_ConsultarCalificacionesPorTienda
 -- ############################
--- STORE PROCEDURE PARA CONTAR CALIFICACION POR UNA TIENDA ESPECÍFICO
+-- STORE PROCEDURE PARA CONSULTAR CALIFICACIONES POR ESTRELLAS DE UNA TIENDA
 -- Autor: <Emil Jesus Hernandez Avilez>
--- Create Date: <14 de noviembre de 2024>
--- Description: <Cuenta las calificaciones de cada tienda en numero>
+-- Create Date: <15 de noviembre de 2024>
+-- Description: <Consulta las calificaciones agrupadas por estrellas de una tienda específica>
 -- ############################
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCalificacionesPorEstrellas]
-    @clienteId INT,
+CREATE OR ALTER PROCEDURE [dbo].[sp_ConsultarCalificacionesPorTienda]
+    @TiendaId INT,
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -2384,39 +2384,41 @@ BEGIN
     SET @mensaje = '';
 
     BEGIN TRY
-        -- Verifica si el cliente existe
-        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        -- Verifica si la tienda existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @TiendaId)
         BEGIN
             SET @tipoError = 1;
-            SET @mensaje = 'Cliente no encontrado';
+            SET @mensaje = 'Tienda no encontrada.';
             RETURN;
         END
 
-        -- Consulta de conteo de calificaciones por estrellas para el cliente especificado
+        -- Consulta las calificaciones agrupadas por su valor
         SELECT 
-            calificacion,             -- Asumiendo que la columna de calificación se llama "estrellas"
-            COUNT(*) AS cantidad   -- Cuenta cuántas veces aparece cada calificación
+            calificacion,
+            COUNT(*) AS cantidad
         FROM 
-            BSK_CalificacionTienda      -- Asumiendo que la tabla de calificaciones se llama "BSK_Calificaciones"
+            BSK_CalificacionTienda
         WHERE 
-            clienteId = @clienteId
+            tiendaId = @TiendaId
         GROUP BY 
-            calificacion;
+            calificacion
+        ORDER BY 
+            calificacion ASC;
 
         -- Establece mensaje de éxito
-        SET @tipoError = 0;  
-        SET @mensaje = 'Operación correcta';
+        SET @tipoError = 0;
+        SET @mensaje = 'Operación correcta.';
     END TRY
     BEGIN CATCH
-        SET @tipoError = 1;  
+        SET @tipoError = 1;
         SET @mensaje = ERROR_MESSAGE();
     END CATCH;
 
-    -- Imprime el mensaje en lugar de devolverlo como un conjunto de resultados
     PRINT @mensaje;
 END;
 GO
-print 'Operación correcta, sp_ContarCalificacionesPorEstrellas ejecutado.';
+
+PRINT 'Operación correcta, sp_ConsultarCalificacionesPorTienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
