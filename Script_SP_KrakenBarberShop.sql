@@ -2309,16 +2309,16 @@ GO
 -- #endregion
 ------*************************************************************
 
--- #region sp_ContarCitasPorEstadoCliente
+-- #region sp_ContarCitasPorEstadoTienda
 -- ############################
--- STORE PROCEDURE PARA CONTAR CITAS POR ESTADO PARA UN CLIENTE ESPECÍFICO
+-- STORE PROCEDURE PARA CONTAR CITAS POR ESTADO PARA UNA TIENDA ESPECÍFICA
 -- Autor: <Emil Jesus Hernandez Avilez>
--- Create Date: <14 de noviembre de 2024>
--- Description: <Cuenta las citas pendientes, canceladas y confirmadas en el campo estado para un cliente específico>
+-- Create Date: <15 de noviembre de 2024>
+-- Description: <Cuenta las citas pendientes, canceladas y confirmadas en el campo estado para una tienda específica>
 -- ############################
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCitasPorEstadoCliente]
-    @clienteId INT,
+CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCitasPorEstadoTienda]
+    @tiendaId INT,
     @tipoError INT OUTPUT,
     @mensaje VARCHAR(255) OUTPUT
 AS
@@ -2329,40 +2329,44 @@ BEGIN
     SET @mensaje = '';
 
     BEGIN TRY
-        -- Verifica si el cliente existe
-        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        -- Verifica si la tienda existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @tiendaId)
         BEGIN
             SET @tipoError = 1;
-            SET @mensaje = 'Cliente no encontrado';
+            SET @mensaje = 'Tienda no encontrada';
             RETURN;
         END
 
-        -- Consulta de conteo de citas por estado para el cliente especificado
+        -- Consulta de conteo de citas por estado para la tienda especificada
         SELECT 
             estado,
             COUNT(*) AS cantidad
         FROM 
             BSK_Citas
         WHERE 
-            clienteId = @clienteId
+            tiendaId = @tiendaId
         GROUP BY 
             estado;
 
-        SET @tipoError = 0;  
+        -- Establece mensaje de éxito
+        SET @tipoError = 0;
         SET @mensaje = 'Operación correcta';
     END TRY
     BEGIN CATCH
-        SET @tipoError = 1;  
+        SET @tipoError = 1;
         SET @mensaje = ERROR_MESSAGE();
     END CATCH;
 
-    SELECT @tipoError as tipoError, @mensaje as mensaje;
+    -- Devuelve el mensaje y tipo de error
+    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 END;
 GO
-print 'Operación correcta, sp_ContarCitasPorEstadoCliente ejecutado.';
+
+PRINT 'Operación correcta, sp_ContarCitasPorEstadoTienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
+
 
 -- #region sp_ConsultarCalificacionesPorTienda
 -- ############################

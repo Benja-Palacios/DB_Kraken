@@ -379,13 +379,17 @@ EXEC sp_actualizar_contrasena_sin_actual
 SELECT @tipoError AS tipoError, @mensaje AS mensaje;
 
 
------------STORE PROCEDURE PARA CONTAR CITAS POR ESTADO PARA UN CLIENTE ESPECÍFICO
-DECLARE @tipoError INT, @mensaje VARCHAR(255);
+-----------STORE PROCEDURE PARA CONTAR CITAS POR ESTADO PARA UNA TIENDA ESPECÍFICA
 
-EXEC sp_ContarCitasPorEstadoCliente 
-    @clienteId = 1, 
+DECLARE @tipoError INT;
+DECLARE @mensaje VARCHAR(255);
+
+EXEC sp_ContarCitasPorEstadoTienda 
+    @tiendaId = 2, 
     @tipoError = @tipoError OUTPUT, 
     @mensaje = @mensaje OUTPUT;
+
+SELECT @tipoError AS TipoError, @mensaje AS Mensaje;
 
 
 -----------STORE PROCEDURE PARA CONTAR CALIFICACION POR UNA TIENDA ESPECÍFICO
