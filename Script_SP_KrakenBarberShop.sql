@@ -2308,3 +2308,115 @@ print 'Operación correcta, sp_actualizar_contrasena_sin_actual.';
 GO
 -- #endregion
 ------*************************************************************
+
+-- #region sp_ContarCitasPorEstadoCliente
+-- ############################
+-- STORE PROCEDURE PARA CONTAR CITAS POR ESTADO PARA UN CLIENTE ESPECÍFICO
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <14 de noviembre de 2024>
+-- Description: <Cuenta las citas pendientes, canceladas y confirmadas en el campo estado para un cliente específico>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCitasPorEstadoCliente]
+    @clienteId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        -- Verifica si el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'Cliente no encontrado';
+            RETURN;
+        END
+
+        -- Consulta de conteo de citas por estado para el cliente especificado
+        SELECT 
+            estado,
+            COUNT(*) AS cantidad
+        FROM 
+            BSK_Citas
+        WHERE 
+            clienteId = @clienteId
+        GROUP BY 
+            estado;
+
+        SET @tipoError = 0;  
+        SET @mensaje = 'Operación correcta';
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 1;  
+        SET @mensaje = ERROR_MESSAGE();
+    END CATCH;
+
+    SELECT @tipoError as tipoError, @mensaje as mensaje;
+END;
+GO
+print 'Operación correcta, sp_ContarCitasPorEstadoCliente ejecutado.';
+GO
+-- #endregion
+------*************************************************************
+
+-- #region sp_ContarCitasPorEstadoCliente
+-- ############################
+-- STORE PROCEDURE PARA CONTAR CALIFICACION POR UNA TIENDA ESPECÍFICO
+-- Autor: <Emil Jesus Hernandez Avilez>
+-- Create Date: <14 de noviembre de 2024>
+-- Description: <Cuenta las calificaciones de cada tienda en numero>
+-- ############################
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCalificacionesPorEstrellas]
+    @clienteId INT,
+    @tipoError INT OUTPUT,
+    @mensaje VARCHAR(255) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @tipoError = 0;
+    SET @mensaje = '';
+
+    BEGIN TRY
+        -- Verifica si el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM BSK_Cliente WHERE id = @clienteId)
+        BEGIN
+            SET @tipoError = 1;
+            SET @mensaje = 'Cliente no encontrado';
+            RETURN;
+        END
+
+        -- Consulta de conteo de calificaciones por estrellas para el cliente especificado
+        SELECT 
+            calificacion,             -- Asumiendo que la columna de calificación se llama "estrellas"
+            COUNT(*) AS cantidad   -- Cuenta cuántas veces aparece cada calificación
+        FROM 
+            BSK_CalificacionTienda      -- Asumiendo que la tabla de calificaciones se llama "BSK_Calificaciones"
+        WHERE 
+            clienteId = @clienteId
+        GROUP BY 
+            calificacion;
+
+        -- Establece mensaje de éxito
+        SET @tipoError = 0;  
+        SET @mensaje = 'Operación correcta';
+    END TRY
+    BEGIN CATCH
+        SET @tipoError = 1;  
+        SET @mensaje = ERROR_MESSAGE();
+    END CATCH;
+
+    -- Imprime el mensaje en lugar de devolverlo como un conjunto de resultados
+    PRINT @mensaje;
+END;
+GO
+print 'Operación correcta, sp_ContarCalificacionesPorEstrellas ejecutado.';
+GO
+-- #endregion
+------*************************************************************
