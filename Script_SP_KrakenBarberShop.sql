@@ -2318,26 +2318,12 @@ GO
 -- ############################
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_ContarCitasPorEstadoTienda]
-    @tiendaId INT,
-    @tipoError INT OUTPUT,
-    @mensaje VARCHAR(255) OUTPUT
+    @tiendaId INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SET @tipoError = 0;
-    SET @mensaje = '';
-
     BEGIN TRY
-        -- Verifica si la tienda existe
-        IF NOT EXISTS (SELECT 1 FROM BSK_Tienda WHERE id = @tiendaId)
-        BEGIN
-            SET @tipoError = 1;
-            SET @mensaje = 'Tienda no encontrada';
-            RETURN;
-        END
-
-        -- Consulta de conteo de citas por estado para la tienda especificada
         SELECT 
             estado,
             COUNT(*) AS cantidad
@@ -2347,22 +2333,14 @@ BEGIN
             tiendaId = @tiendaId
         GROUP BY 
             estado;
-
-        -- Establece mensaje de éxito
-        SET @tipoError = 0;
-        SET @mensaje = 'Operación correcta';
     END TRY
     BEGIN CATCH
-        SET @tipoError = 1;
-        SET @mensaje = ERROR_MESSAGE();
-    END CATCH;
-
-    -- Devuelve el mensaje y tipo de error
-    SELECT @tipoError AS tipoError, @mensaje AS mensaje;
+        -- Manejo de errores
+        SELECT 
+            ERROR_NUMBER() AS ErrorNumber,
+            ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
 END;
-GO
-
-PRINT 'Operación correcta, sp_ContarCitasPorEstadoTienda ejecutado.';
 GO
 -- #endregion
 ------*************************************************************
